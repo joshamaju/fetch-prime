@@ -17,17 +17,21 @@ export * as Logger from "./Logger.js";
  */
 export * as StatusFilter from "./StatusFilter.js";
 
-/**
- * @since 0.0.1
- */
-export { default as URL } from "./Url.js";
+export {
+  /**
+   * @since 0.0.1
+   */
+  default as URL,
+} from "./Url.js";
 
 /**
  * @since 0.0.1
  */
 export * from "./Timeout.js";
 
-/**
- * @since 0.0.1
- */
-export { default as Timeout } from "./Timeout.js";
+export {
+  /**
+   * @since 0.0.1
+   */
+  default as Timeout,
+} from "./Timeout.js";

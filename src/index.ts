@@ -17,11 +17,6 @@ export * from "./Function.js";
  */
 export * from "./Error.js";
 
-// /**
-//  * @since 0.0.1
-//  */
-// export * as Error from "./Error.js";
-
 /**
  * @since 0.0.1
  */
