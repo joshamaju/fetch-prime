@@ -29,14 +29,6 @@ import adapter from "fetch-prime/Adapters/Platform";
 const result = await fetch("/users")(adapter);
 const res = pipe(result, E.chainW(Result.filterStatusOk));
 const users = await chain(res, (res) => res.json());
-
-// or
-const request = map(fetch("/users"), E.chainW(filterStatusOk));
-const users = map(
-  request,
-  chain((res) => res.json())
-);
-const response = await users(adapter);
 ```
 
 ### With interceptor
