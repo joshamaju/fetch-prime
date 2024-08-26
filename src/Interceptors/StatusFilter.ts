@@ -12,7 +12,7 @@ import { Chain } from "../Interceptor.js";
  */
 export const StatusOK = async function (chain: Chain) {
   const response = await chain.proceed(chain.request);
-  return chainW(filterStatusOk)(response);
+  return chainW((r: Response) => filterStatusOk(r))(response);
 };
 
 /**
