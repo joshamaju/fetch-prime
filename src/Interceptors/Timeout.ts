@@ -7,11 +7,7 @@ import { Either } from "fp-ts/Either";
 import { Chain } from "../Interceptor.js";
 import { HttpRequest } from "../Request.js";
 
-/**
- * @since 0.0.1
- * @category model
- */
-export class TimeoutError {
+class TimeoutError {
   readonly _tag = "TimeoutError";
   constructor(readonly duration: number) {}
 }
@@ -43,6 +39,14 @@ const Timeout = (duration: number) => {
 
     return res as Return;
   };
+};
+
+export {
+  /**
+   * @since 0.0.1
+   * @category model
+   */
+  TimeoutError,
 };
 
 /**
