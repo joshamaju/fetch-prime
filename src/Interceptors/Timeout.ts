@@ -7,6 +7,7 @@ import { Either } from "fp-ts/Either";
 import { Chain } from "../Interceptor.js";
 import { HttpRequest } from "../Request.js";
 
+/** @internal */
 class TimeoutError {
   readonly _tag = "TimeoutError";
   constructor(readonly duration: number) {}
