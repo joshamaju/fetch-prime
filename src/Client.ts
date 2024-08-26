@@ -21,6 +21,7 @@ export type Config<E, R> = {
   interceptors?: Interceptors<E, R>;
 };
 
+/** @internal */
 export type Handler = (
   url: string | URL | HttpRequest,
   init?:
