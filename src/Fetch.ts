@@ -46,6 +46,10 @@ export const fetch: (
 ) => <E>(fetch: Fetch<E>) => Promise<Either<E | HttpError, HttpResponse>> =
   core.fetch;
 
+/**
+ * @since 0.0.1
+ * @category combinator
+ */
 export const map: <E, A, B, E2 = E>(
   request: (fetch: Fetch<E2>) => Promise<Either<E, A>>,
   fn: (res: Either<E, A>) => B
