@@ -6,11 +6,13 @@ import { Either } from "fp-ts/Either";
 import { DecodeError } from "./internal/error.js";
 import * as core from "./internal/request.js";
 
-/**
- * @since 0.0.1
- * @category model
- */
-export { HttpRequest } from "./internal/request.js";
+export {
+  /**
+   * @since 0.0.1
+   * @category model
+   */
+  HttpRequest,
+} from "./internal/request.js";
 
 /**
  * @since 0.0.1
