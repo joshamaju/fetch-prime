@@ -26,7 +26,7 @@ import adapter from "fetch-prime/Adapters/Platform";
 const response = await fetch("/users")(adapter);
 
 if (E.isRight(response) && response.right.ok) {
-  const users = await response.json();
+  const users = await response.right.json();
 }
 
 // or
