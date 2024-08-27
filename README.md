@@ -68,7 +68,7 @@ const response = await fetch("/users")(intercept_adapter);
 import FetchAdapter from "fetch-prime/Adapters/Platform";
 ```
 
-> You can write your own adapter i.e using XMLHTTPRequest
+> You can write your own adapter i.e using XMLHttpRequest
 
 ## Interceptors
 
