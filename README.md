@@ -2,8 +2,9 @@
 
 `fetch` but with super-powers
 
-- 🖇 Interceptors
+- 🔗 Interceptors
 - 🔐 Strongly typed errors
+- 🔌 Platform adapters
 
 ## Install
 
@@ -19,16 +20,22 @@ npm install fetch-prime fp-ts
 
 ```ts
 import * as E from "fp-ts/Either";
-import { pipe } from "fp-ts/function";
-
-import { fetch, map } from "fetch-prime/Fetch";
-import { chain } from "fetch-prime/Function";
-import * as Result from "fetch-prime/Response";
+import { fetch } from "fetch-prime/Fetch";
 import adapter from "fetch-prime/Adapters/Platform";
 
+const response = await fetch("/users")(adapter);
+
+if (E.isRight(response) && response.right.ok) {
+  const users = await response.json();
+}
+
+// or
+import { chain } from "fetch-prime/Function";
+import * as Response from "fetch-prime/Response";
+
 const result = await fetch("/users")(adapter);
-const res = pipe(result, E.chainW(Result.filterStatusOk));
-const users = await chain(res, (res) => res.json());
+const ok = E.chainW(Response.filterStatusOk)(result);
+const users = await chain(ok, (res) => res.json());
 ```
 
 ### With interceptor
@@ -41,26 +48,31 @@ const baseURL = "https://reqres.in/api";
 
 // our list of interceptors
 const interceptors = Interceptor.of(BaseURL(baseURL));
+// or
+const interceptors = Interceptor.add(Interceptor.empty(), BaseURL(baseURL));
 
 // make function that executes our interceptors
 const interceptor = Interceptor.make(interceptors);
 
-// we finally make the HTTP adapter using the native Fetch API
-const adapter = interceptor(adapter);
+// we finally make the HTTP adapter
+const intercept_adapter = interceptor(adapter);
 
-const result = await program(adapter);
+const response = await fetch("/users")(intercept_adapter);
 ```
 
-## POST Request
+## Adapters
+
+`fetch-prime` provides a default adapter that uses the platform fetch.
 
 ```ts
-const request = fetch("/users", { method: "POST" });
-// ...
+import FetchAdapter from "fetch-prime/Adapters/Platform";
 ```
+
+> You can write your own adapter i.e using XMLHTTPRequest
 
 ## Interceptors
 
-`fetch-prime` ships with default interceptors
+`fetch-prime` ships with the following interceptors
 
 - Base URL
 - Timeout
@@ -68,20 +80,19 @@ const request = fetch("/users", { method: "POST" });
 - Status Filter
 - Bearer and Basic authentication
 
-### Status Filter
+### Example
 
-To avoid manually forking the response into the error and success paths
+Instead of checking if the response is ok i.e 200
 
 ```ts
-const result = await fetch("/users")(adapter);
+const response = await fetch("/users")(adapter);
 
-// equivalent to response.ok ? response.json() : // handle not ok status
-const res = pipe(result, E.chainW(Result.filterStatusOk));
-
-const users = await chain(res, (res) => res.json());
+if (E.isRight(response) && response.right.ok) {
+  const users = await response.json();
+}
 ```
 
-We can delegate that to an interceptor. So we can decode the response body without worrying about the OK status
+We can delegate that to a response interceptor that performs that check.
 
 ```ts
 const interceptors = Interceptor.of(StatusOK);
@@ -92,10 +103,7 @@ const adapter = interceptor(adapter);
 
 const request = await fetch("/users")(adapter);
 const users = await chain(request, (res) => res.json());
-
-if (E.isLeft(users) && users.left instanceof StatusError) {
-  // do something with error status response
-}
+// ...
 ```
 
 ### Writing your own interceptor
