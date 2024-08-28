@@ -1,6 +1,6 @@
 {
   "name": "fetch-prime",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "fetch + interceptors + strongly typed errors",
   "type": "module",
   "homepage": "https://github.com/joshamaju/fetch-prime",
