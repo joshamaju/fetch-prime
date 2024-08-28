@@ -6,7 +6,7 @@ import type { Either } from "fp-ts/Either";
 import { HttpError } from "./internal/error.js";
 import * as core from "./internal/fetch.js";
 import { HttpRequest } from "./internal/request.js";
-import { HttpResponse } from "./internal/response/index.js";
+import { HttpResponseEither } from "./internal/response/index.js";
 
 /**
  * @since 0.0.1
@@ -42,8 +42,8 @@ export const fetch_: (
  */
 export const fetch: (
   url: string | URL,
-  init?: RequestInit | undefined
-) => <E>(fetch: Fetch<E>) => Promise<Either<E | HttpError, HttpResponse>> =
+  init?: RequestInit
+) => <E>(fetch: Fetch<E>) => Promise<HttpResponseEither<E | HttpError>> =
   core.fetch;
 
 /**

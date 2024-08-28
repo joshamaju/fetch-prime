@@ -23,22 +23,27 @@ import * as E from "fp-ts/Either";
 import { fetch } from "fetch-prime/Fetch";
 import adapter from "fetch-prime/Adapters/Platform";
 
-const response = await fetch("/users")(adapter);
+const request = await fetch("/users")(adapter);
+const {response} = request;
 
 if (E.isRight(response) && response.right.ok) {
   const users = await response.right.json();
 }
 
 // or
-import { chain } from "fetch-prime/Function";
-import * as Response from "fetch-prime/Response";
+import { andThen } from "fetch-prime/Function";
+import {filterStatusOk} from "fetch-prime/Response";
 
-const result = await fetch("/users")(adapter);
-const ok = E.chainW(Response.filterStatusOk)(result);
-const users = await chain(ok, (res) => res.json());
+const request = await fetch("/users")(adapter);
+const ok = andThen(request.response, filterStatusOk);
+const users = await andThen(ok, (res) => res.json());
+
+// or
+const response = await fetch("/users")(adapter);
+const users = await response.ok((res) => res.json());
 ```
 
-### With interceptor
+## With interceptor
 
 ```ts
 import * as Interceptor from "fetch-prime/Interceptor";
@@ -86,10 +91,7 @@ Instead of checking if the response is ok i.e 200
 
 ```ts
 const response = await fetch("/users")(adapter);
-
-if (E.isRight(response) && response.right.ok) {
-  const users = await response.json();
-}
+const users = await response.ok(res => res.json());
 ```
 
 We can delegate that to a response interceptor that performs that check.
@@ -99,10 +101,10 @@ const interceptors = Interceptor.of(StatusOK);
 
 const interceptor = Interceptor.make(interceptors);
 
-const adapter = interceptor(adapter);
+const adapter = interceptor(Adapter);
 
-const request = await fetch("/users")(adapter);
-const users = await chain(request, (res) => res.json());
+const response = await fetch("/users")(adapter);
+const users = await response.json();
 // ...
 ```
 

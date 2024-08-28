@@ -52,6 +52,12 @@ export {
    * @category model
    */
   HttpResponse,
+
+  /**
+   * @since 0.1.0
+   * @category model
+   */
+  HttpResponseEither,
 } from "./internal/response/index.js";
 
 /**

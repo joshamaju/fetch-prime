@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { pipe } from "fp-ts/function";
 import * as E from "fp-ts/Either";
 
-import { chain } from '../src/Function.js'
+import { andThen } from "../src/Function.js";
 import PlatformAdapter from "../src/Adapters/Platform.js";
 import * as Http from "../src/Client.js";
 import * as Interceptor from "../src/Interceptor.js";
@@ -23,9 +23,9 @@ test("should make client with http methods", async () => {
   const adapter = Interceptor.make(interceptors)(PlatformAdapter);
 
   const res = await Http.get("/users/2")(adapter);
-  const json = await chain(res, Response.json)
+  const json = await andThen(res, Response.json);
 
-  const result = (json as Extract<typeof result, { _tag: "Right" }>)
+  const result = json as Extract<typeof result, { _tag: "Right" }>;
 
   expect(result.right.data.id).toBe(2);
 });
@@ -35,7 +35,7 @@ test("should make client with base URL for every request", async () => {
 
   const res = await Http.get("/users/2")(client);
 
-  const result = await chain(res, Response.json)
+  const result = await andThen(res, Response.json);
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -46,7 +46,7 @@ test("should make client with interceptors", async () => {
 
   const res = await Http.get("/users/2")(client);
 
-  const result = await chain(res, Response.json)
+  const result = await andThen(res, Response.json);
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -56,7 +56,7 @@ test("should attach JSON body and headers", async () => {
   let headers;
 
   const spy = (chain: Interceptor.Chain) => {
-    body = chain.request.init?.body
+    body = chain.request.init?.body;
     headers = new Headers(chain.request.init?.headers);
     return chain.proceed(chain.request);
   };
@@ -68,11 +68,11 @@ test("should attach JSON body and headers", async () => {
 
   const adapter = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const body_json = json({ name: "morpheus", job: "leader" })
+  const body_json = json({ name: "morpheus", job: "leader" });
 
   const res = await Http.post("/users", body_json)(adapter);
 
-  const result = await chain(res, Response.json)
+  const result = await andThen(res, Response.json);
 
   expect((result as E.Right<any>).right).toMatchObject({
     name: "morpheus",
@@ -104,7 +104,7 @@ test("should attach JSON body and headers with custom headers", async () => {
     body: json({ name: "morpheus", job: "leader" }),
   })(adapter);
 
-  const result = await chain(res, Response.json)
+  const result = await andThen(res, Response.json);
 
   expect((result as E.Right<any>).right).toMatchObject({
     name: "morpheus",
@@ -137,7 +137,7 @@ describe("method", () => {
     let method;
 
     const check = async (chain: Interceptor.Chain) => {
-      method = chain.request.init?.method
+      method = chain.request.init?.method;
       return E.right(new globalThis.Response(""));
     };
 
@@ -154,7 +154,7 @@ describe("method", () => {
     let method;
 
     const check = async (chain: Interceptor.Chain) => {
-      method = chain.request.init?.method
+      method = chain.request.init?.method;
       return E.right(new globalThis.Response(""));
     };
 

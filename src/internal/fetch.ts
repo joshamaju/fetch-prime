@@ -1,7 +1,7 @@
 import { map as mapE, isLeft, Either } from "fp-ts/Either";
 
 import { Fetch } from "../Fetch.js";
-import { HttpResponse } from "./response/index.js";
+import { HttpResponse, HttpResponseEither } from "./response/index.js";
 import { HttpError } from "./error.js";
 
 export const raw = (url: string | URL, init?: RequestInit) => {
@@ -11,7 +11,9 @@ export const raw = (url: string | URL, init?: RequestInit) => {
 export const fetch = (url: string | URL, init?: RequestInit) => {
   return async <E>(fetch: Fetch<E>) => {
     const res = await fetch(url, init);
-    return mapE((res: Response) => new HttpResponse(res))(res);
+    return new HttpResponseEither(
+      mapE((res: Response) => new HttpResponse(res))(res)
+    );
   };
 };
 

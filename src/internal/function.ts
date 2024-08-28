@@ -9,11 +9,10 @@ import { isLeft, Either } from "fp-ts/Either";
 //   return result;
 // };
 
-export const chain = async <E, A, E1, B>(
+export const andThen = <E, A, E1, B>(
   response: Either<E, A>,
-  fn: (res: A) => Promise<Either<E1, B>>
-): Promise<Either<E | E1, B>> => {
+  fn: (res: A) => Either<E1, B> | Promise<Either<E1, B>>
+): Either<E | E1, B> | Promise<Either<E | E1, B>> => {
   if (isLeft(response)) return response;
-  const result = await fn(response.right);
-  return result;
+  return fn(response.right);
 };
