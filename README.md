@@ -3,7 +3,7 @@
 `fetch` but with super-powers
 
 - 🔗 Interceptors
-- 🔐 Strongly typed errors
+- 🔐 Fully typed errors
 - 🔌 Platform adapters
 
 ## Install

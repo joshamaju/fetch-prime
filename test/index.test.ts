@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import * as E from "fp-ts/Either";
 
 import Adapter from "../src/Adapters/Platform.js";
-import { fetch, fetch_, andThen } from "../src/index.js";
+import { fetch, fetch_, andThen, map } from "../src/index.js";
 import { filterStatusOk, HttpResponse } from "../src/Response.js";
 
 const base_url = "https://reqres.in/api";
@@ -65,4 +65,11 @@ test("should partition response with status filter", async () => {
   const ok = andThen(request.response, filterStatusOk);
   const result = await andThen(ok, (r) => r.json());
   expect((result as E.Right<any>).right.data.id).toBe(2);
+});
+
+test("passthrough", async () => {
+  const request = fetch("https://www.google.com");
+  const response = map(request, (r) => r.ok((r) => r.text()));
+  const result = await response(Adapter);
+  expect((result as E.Right<string>).right).toContain("Google");
 });

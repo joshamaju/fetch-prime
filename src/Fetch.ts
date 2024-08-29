@@ -50,7 +50,14 @@ export const fetch: (
  * @since 0.0.1
  * @category combinator
  */
-export const map: <E, A, B, E2 = E>(
-  request: (fetch: Fetch<E2>) => Promise<Either<E, A>>,
-  fn: (res: Either<E, A>) => B
-) => (fetch: Fetch<E2>) => Promise<B> = core.map;
+export const map: {
+  <E, A, B, E2 = E>(
+    request: (fetch: Fetch<E2>) => Promise<HttpResponseEither<E>>,
+    fn: (res: HttpResponseEither<E>) => B
+  ): (fetch: Fetch<E2>) => Promise<B>;
+
+  <E, A, B, E2 = E>(
+    request: (fetch: Fetch<E2>) => Promise<Either<E, A>>,
+    fn: (res: Either<E, A>) => B
+  ): (fetch: Fetch<E2>) => Promise<B>;
+} = core.map;
