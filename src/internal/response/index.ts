@@ -144,12 +144,21 @@ export class HttpResponseEither<E> {
     return chainW((r: HttpResponse) => fn(r))(this.response);
   }
 
+  // async flatMap<E1, A>(
+  //   fn: (r: HttpResponse) => Promise<Either<E1, A>>
+  // ): Promise<Either<E | E1, A>> {
+  //   const res = this.response;
+  //   if (isLeft(res)) return res;
+  //   return fn(res.right);
+  // }
+
   async ok<E1, A>(
     fn: (self: HttpResponse) => Promise<Either<E1, A>>
   ): Promise<Either<E | E1 | HttpResponse, A>> {
     const res = this.response;
     if (isLeft(res)) return res;
     return res.right.ok ? fn(res.right) : left(res.right);
+    // return res.right.ok ? fn(res.right) : left(new StatusError(res.right.response));
   }
 
   get headers() {
