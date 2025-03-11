@@ -47,10 +47,7 @@ test("should be able to abort request", async () => {
     signal: controller.signal,
   });
 
-  let timeout = setTimeout(() => {
-    controller.abort();
-    clearTimeout(timeout);
-  }, 500);
+  setTimeout(() => controller.abort(), 500);
 
   const res = await req;
   const result = await res.ok((_) => _.json());

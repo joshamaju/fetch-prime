@@ -17,19 +17,18 @@ export {
    * @since 0.0.1
    * @category model
    */
-  InterceptorError
+  InterceptorError,
 } from "./internal/interceptor.js";
 
 /** @internal */
 export type Merge<
   I extends Interceptors<any, any>,
-  T extends Interceptor<any, any>,
-> =
-  I extends Interceptors<infer R1, infer E1>
-    ? T extends Interceptor<infer R2, infer E2>
-      ? Interceptors<R1 | R2, E1 | E2>
-      : never
-    : never;
+  T extends Interceptor<any, any>
+> = I extends Interceptors<infer R1, infer E1>
+  ? T extends Interceptor<infer R2, infer E2>
+    ? Interceptors<R1 | R2, E1 | E2>
+    : never
+  : never;
 
 type NextFunction = (
   request: HttpRequest
@@ -75,9 +74,9 @@ export const empty: () => Interceptors<never, never> = core.empty;
  * @category combinator
  */
 export const add: {
-  <T extends Interceptor<any, any>>(
-    interceptor: T
-  ): <E, R>(interceptors: Interceptors<E, R>) => Merge<Interceptors<E, R>, T>;
+  <T extends Interceptor<any, any>>(interceptor: T): <E, R>(
+    interceptors: Interceptors<E, R>
+  ) => Merge<Interceptors<E, R>, T>;
   <T extends Interceptor<any, any>, E, R>(
     interceptors: Interceptors<E, R>,
     interceptor: T

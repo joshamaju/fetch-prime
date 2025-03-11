@@ -237,7 +237,7 @@ test("should attach url to every outgoing request", async () => {
   );
 });
 
-test("should make interceptor from effect", async () => {
+test("should make interceptor from thunk", async () => {
   const adapter = function () {
     const interceptors = Interceptor.of(BaseURL(base_url));
     return Interceptor.make(interceptors)(PlatformAdapter);
@@ -249,7 +249,7 @@ test("should make interceptor from effect", async () => {
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
 
-test("should make interceptor from effect with additional requirements", async () => {
+test("should make interceptor from thunk with additional requirements", async () => {
   type Store = { get: T.Task<string> };
 
   const url = async function (store: Store) {

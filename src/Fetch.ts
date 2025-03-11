@@ -27,17 +27,7 @@ export type Fetch<E> = (
 ) => Promise<Either<E | HttpError, Response>>;
 
 /**
- * @since 0.0.1
- * @category constructor
- */
-// export const fetch_: (
-//   url: string | URL,
-//   init?: RequestInit | undefined
-// ) => <E>(fetch: Fetch<E>) => Promise<Either<E | HttpError, Response>> =
-//   core.raw;
-
-/**
- * @since 0.0.1
+ * @since 0.1.0
  * @category constructor
  */
 export const fetch: <E>(
@@ -46,19 +36,3 @@ export const fetch: <E>(
   url: string | URL,
   init?: RequestInit
 ) => Promise<HttpResponseEither<E | HttpError>> = core.fetch;
-
-/**
- * @since 0.0.1
- * @category combinator
- */
-// export const map: {
-//   <E, A, B, E2 = E>(
-//     request: (fetch: Fetch<E2>) => Promise<HttpResponseEither<E>>,
-//     fn: (res: HttpResponseEither<E>) => B
-//   ): (fetch: Fetch<E2>) => Promise<B>;
-
-//   <E, A, B, E2 = E>(
-//     request: (fetch: Fetch<E2>) => Promise<Either<E, A>>,
-//     fn: (res: Either<E, A>) => B
-//   ): (fetch: Fetch<E2>) => Promise<B>;
-// } = core.map;
