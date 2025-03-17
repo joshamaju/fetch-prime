@@ -9,6 +9,12 @@ import { HttpRequest } from "./internal/request.js";
 import { HttpResponseEither } from "./internal/response/index.js";
 
 /**
+ * @since 0.2.0
+ * @category model
+ */
+export interface Init extends RequestInit {}
+
+/**
  * @since 0.0.1
  * @category model
  */
@@ -34,5 +40,5 @@ export const fetch: <E>(
   fetch: Fetch<E>
 ) => (
   url: string | URL,
-  init?: RequestInit
+  init?: Init
 ) => Promise<HttpResponseEither<E | HttpError>> = core.fetch;
