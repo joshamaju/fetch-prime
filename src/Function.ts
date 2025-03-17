@@ -29,4 +29,4 @@ export const andThen: {
 
   <A, B>(fn: (self: A) => B): <E>(response: Either<E, A>) => Either<E, B>;
   <E, A, B>(response: Either<E, A>, fn: (self: A) => B): Either<E, B>;
-} = dual(2, (response, fn) => core.flatMap(response, fn));
+} = dual(2, (response, fn) => core.andThen(response, fn));
