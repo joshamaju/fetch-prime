@@ -1,11 +1,15 @@
-import { chainW } from "fp-ts/Either";
+import { chainW, map } from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 
 import { Config } from "../Client.js";
 import type { Interceptor, Interceptors, Merge } from "../Interceptor.js";
 import { add, copy, empty, make as makeInterceptor } from "../Interceptor.js";
 import { Body, isBody } from "./body.js";
-import { filterStatusOk } from "./response/index.js";
+import {
+  filterStatusOk,
+  HttpResponse,
+  HttpResponseEither,
+} from "./response/index.js";
 
 import Timeout from "../Interceptors/Timeout.js";
 import BaseURL from "../Interceptors/Url.js";
@@ -51,6 +55,14 @@ export const create = <E, R>({
       ? adapter
       : makeInterceptor(interceptors_)(adapter);
 
+  const fn = async (
+    url: string | URL | HttpRequest,
+    init?: RequestInit | undefined
+  ) => {
+    const res = await adapter_(url, init);
+    return pipe(res, chainW(filterStatusOk));
+  };
+
   const method = (method: Method) => {
     return async (
       url: string | URL | HttpRequest,
@@ -92,25 +104,29 @@ export const create = <E, R>({
         headers = local_headers;
       }
 
-      const res = await adapter_(url, { ...init, body, method, headers });
+      const res = await fn(url, { ...init, body, method, headers });
 
-      return pipe(res, chainW(filterStatusOk));
+      return new HttpResponseEither(
+        pipe(
+          res,
+          chainW(filterStatusOk),
+          map((res) => new HttpResponse(res))
+        )
+      );
     };
   };
 
-  return {
+  const helpers = {
     get: method("GET"),
-
     put: method("PUT"),
-
     post: method("POST"),
-
     head: method("HEAD"),
-
     patch: method("PATCH"),
-
     delete: method("DELETE"),
-
     options: method("OPTIONS"),
   };
+
+  Object.assign(fn, helpers);
+
+  return fn;
 };

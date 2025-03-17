@@ -1,9 +1,7 @@
 /**
- * @since 0.0.1
+ * @since 0.1.0
  */
-
 import { Either } from "fp-ts/Either";
-
 import { StatusError } from "./Error.js";
 import { Adapter } from "./Fetch.js";
 import { Interceptors } from "./Interceptor.js";
@@ -12,8 +10,12 @@ import { Body } from "./internal/body.js";
 import * as core from "./internal/client.js";
 import { HttpError } from "./internal/error.js";
 import { HttpRequest } from "./internal/request.js";
+import { HttpResponseEither } from "./Response.js";
 
-/** @internal */
+/**
+ * @since 0.2.0
+ * @category model
+ */
 export type Config<E, R> = {
   url?: string;
   adapter: Adapter;
@@ -21,7 +23,10 @@ export type Config<E, R> = {
   interceptors?: Interceptors<E, R>;
 };
 
-/** @internal */
+/**
+ * @since 0.2.0
+ * @category model
+ */
 export type Handler<E> = (
   url: string | URL | HttpRequest,
   init?:
@@ -29,7 +34,25 @@ export type Handler<E> = (
     | (Omit<RequestInit, "body"> & { body?: Body | BodyInit })
     | Body
     | undefined
-) => Promise<Either<E | StatusError, Response>>;
+) => Promise<HttpResponseEither<E | StatusError>>;
+
+/**
+ * @since 0.2.0
+ * @category model
+ */
+export interface Instance<E> {
+  (url: string | URL | HttpRequest, init?: RequestInit | undefined): Promise<
+    Either<E | StatusError, Response>
+  >;
+
+  get: Handler<E>;
+  put: Handler<E>;
+  post: Handler<E>;
+  head: Handler<E>;
+  patch: Handler<E>;
+  delete: Handler<E>;
+  options: Handler<E>;
+}
 
 /**
  * @since 0.1.0
@@ -38,22 +61,6 @@ export type Handler<E> = (
 export const create: {
   <E = HttpError, R = never>(
     config: Config<E, R> & Omit<Config<E, R>, "timeout"> & { timeout: number }
-  ): {
-    get: Handler<E | TimeoutError>;
-    put: Handler<E | TimeoutError>;
-    post: Handler<E | TimeoutError>;
-    head: Handler<E | TimeoutError>;
-    patch: Handler<E | TimeoutError>;
-    delete: Handler<E | TimeoutError>;
-    options: Handler<E | TimeoutError>;
-  };
-  <E = HttpError, R = never>(config: Config<E, R>): {
-    get: Handler<E>;
-    put: Handler<E>;
-    post: Handler<E>;
-    head: Handler<E>;
-    patch: Handler<E>;
-    delete: Handler<E>;
-    options: Handler<E>;
-  };
-} = core.create;
+  ): Instance<E | TimeoutError>;
+  <E = HttpError, R = never>(config: Config<E, R>): Instance<E>;
+} = core.create as any;
