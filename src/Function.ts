@@ -7,7 +7,7 @@ import * as core from "./internal/function.js";
 import { dual } from "./internal/utils.js";
 
 /**
- * @since 0.1.0
+ * @since 0.2.0
  * @category combinator
  */
 export const andThen: {

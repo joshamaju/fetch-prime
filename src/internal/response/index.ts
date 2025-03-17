@@ -144,6 +144,19 @@ export class HttpResponseEither<E> {
     return chainW((r: HttpResponse) => fn(r))(this.response);
   }
 
+  andThen<E1, B>(
+    fn: (self: HttpResponse) => Promise<Either<E1, B>>
+  ): Promise<Either<E | E1, B>>;
+  andThen<E1, B>(fn: (self: HttpResponse) => Either<E1, B>): Either<E | E1, B>;
+  andThen<B>(fn: (self: HttpResponse) => B): Either<E, B>;
+  andThen<E1, B>(
+    fn: (self: HttpResponse) => Promise<Either<E1, B>> | Either<E1, B> | B
+  ) {
+    const res = this.response;
+    if (isLeft(res)) return res;
+    return fn(res.right);
+  }
+
   async ok<E1, A>(
     fn: (self: HttpResponse) => Promise<Either<E1, A>>
   ): Promise<Either<E | E1 | HttpResponse, A>> {
@@ -152,23 +165,6 @@ export class HttpResponseEither<E> {
     return res.right.ok ? fn(res.right) : left(res.right);
     // return res.right.ok ? fn(res.right) : left(new StatusError(res.right.response));
   }
-
-  // flatMap<E1, A>(fn: (self: HttpResponse) => A): Either<E | HttpResponse, A>;
-  // flatMap<E1, A>(
-  //   fn: (self: HttpResponse) => Either<E1, A>
-  // ): Either<E | E1 | HttpResponse, A>;
-  // flatMap<E1, A>(
-  //   fn: (self: HttpResponse) => Promise<Either<E1, A>>
-  // ): Promise<Either<E | E1 | HttpResponse, A>>;
-  // flatMap<E1, A>(
-  //   fn: (self: HttpResponse) => Either<E1, A> | Promise<Either<E1, A>>
-  // ):
-  //   | Either<E | E1 | HttpResponse, A>
-  //   | Promise<Either<E | E1 | HttpResponse, A>> {
-  //   const res = this.response;
-  //   if (isLeft(res)) return res;
-  //   return fn(res.right);
-  // }
 
   get headers() {
     return this.map((_) => _.headers);
