@@ -8,7 +8,7 @@ import { Body, isBody } from "./body.js";
 import {
   filterStatusOk,
   HttpResponse,
-  HttpResponseEither,
+  ResponseEither,
 } from "./response/index.js";
 
 import Timeout from "../Interceptors/Timeout.js";
@@ -106,7 +106,7 @@ export const create = <E, R>({
 
       const res = await fn(url, { ...init, body, method, headers });
 
-      return new HttpResponseEither(
+      return new ResponseEither(
         pipe(
           res,
           chainW(filterStatusOk),

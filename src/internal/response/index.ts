@@ -133,7 +133,7 @@ export class HttpResponse {
   }
 }
 
-export class HttpResponseEither<E> {
+export class ResponseEither<E> {
   constructor(readonly response: Either<E, HttpResponse>) {}
 
   private map<A>(fn: (r: HttpResponse) => A) {

@@ -10,7 +10,7 @@ import { Body } from "./internal/body.js";
 import * as core from "./internal/client.js";
 import { HttpError } from "./internal/error.js";
 import { HttpRequest } from "./internal/request.js";
-import { HttpResponseEither } from "./Response.js";
+import { ResponseEither } from "./Response.js";
 
 /**
  * @since 0.2.0
@@ -34,7 +34,7 @@ export type Handler<E> = (
     | (Omit<RequestInit, "body"> & { body?: Body | BodyInit })
     | Body
     | undefined
-) => Promise<HttpResponseEither<E | StatusError>>;
+) => Promise<ResponseEither<E | StatusError>>;
 
 /**
  * @since 0.2.0
