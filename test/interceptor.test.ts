@@ -14,6 +14,7 @@ import * as Result from "../src/Response.js";
 import Timeout, { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
 import { StatusOK } from "../src/Interceptors/StatusFilter.js";
+import { URLSearchParams } from "../src/Interceptors/index.js";
 
 const adapter = PlatformAdapter;
 
@@ -297,7 +298,11 @@ describe("error handling", () => {
       return res;
     };
 
-    const second = async () => E.left("error");
+    class Err {
+      constructor(msg: string) {}
+    }
+
+    const second = async () => E.left(new Err("error"));
 
     const interceptors = pipe(
       Interceptor.empty(),
@@ -307,7 +312,7 @@ describe("error handling", () => {
 
     const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
 
-    await Http.fetch(interceptor)(base_url + "/users/2");
+    let r = await Http.fetch(interceptor)(base_url + "/users/2");
 
     expect(E.isLeft(result)).toBeTruthy();
     expect((result as any as E.Left<string>).left).toBe("error");
@@ -371,6 +376,37 @@ describe("Interceptors", () => {
       const result = await res.json();
 
       expect((result as E.Left<any>).left).toBeInstanceOf(StatusError);
+    });
+  });
+
+  describe("URLSearchParams", () => {
+    const interceptors = pipe(
+      Interceptor.empty(),
+      Interceptor.add(base_url_interceptor),
+      Interceptor.add(URLSearchParams)
+    );
+
+    test("should attach request parameters to request url", async () => {
+      let url: string;
+
+      const spy = async function (chain: Interceptor.Chain) {
+        url = chain.request.url.toString();
+        const res = await chain.proceed(chain.request);
+        return res;
+      };
+
+      const newAdapter = Interceptor.make(
+        Interceptor.add(Interceptor.copy(interceptors), spy)
+      )(adapter);
+
+      const res = await Http.fetch(newAdapter)("/users", {
+        params: { page: 2 },
+      });
+
+      const result = await res.json();
+
+      expect(url!).toBe("https://reqres.in/api/users?page=2");
+      expect((result as E.Right<any>).right.page).toBe(2);
     });
   });
 });
