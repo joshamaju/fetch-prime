@@ -3,7 +3,7 @@
  */
 import { Either } from "fp-ts/Either";
 import { StatusError } from "./Error.js";
-import { Adapter, Init } from "./Fetch.js";
+import { Adapter, RequestInit } from "./Fetch.js";
 import { Interceptors } from "./Interceptor.js";
 import { TimeoutError } from "./Interceptors/Timeout.js";
 import { Body } from "./internal/body.js";
@@ -30,8 +30,8 @@ export type Config<E, R> = {
 export type Handler<E> = (
   url: string | URL | HttpRequest,
   init?:
-    | Init
-    | (Omit<Init, "body"> & { body?: Body | BodyInit })
+    | RequestInit
+    | (Omit<RequestInit, "body"> & { body?: Body | BodyInit })
     | Body
     | undefined
 ) => Promise<HttpResponseEither<E | StatusError>>;
@@ -41,7 +41,7 @@ export type Handler<E> = (
  * @category model
  */
 export interface Instance<E> {
-  (url: string | URL | HttpRequest, init?: Init | undefined): Promise<
+  (url: string | URL | HttpRequest, init?: RequestInit | undefined): Promise<
     Either<E | StatusError, Response>
   >;
 

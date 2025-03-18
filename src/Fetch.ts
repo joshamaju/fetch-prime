@@ -12,7 +12,7 @@ import { HttpResponseEither } from "./internal/response/index.js";
  * @since 0.2.0
  * @category model
  */
-export interface Init extends RequestInit {}
+export interface RequestInit extends globalThis.RequestInit {}
 
 /**
  * @since 0.0.1
@@ -40,5 +40,5 @@ export const fetch: <E>(
   fetch: Fetch<E>
 ) => (
   url: string | URL,
-  init?: Init
+  init?: RequestInit
 ) => Promise<HttpResponseEither<E | HttpError>> = core.fetch;
