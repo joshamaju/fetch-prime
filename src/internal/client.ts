@@ -1,15 +1,10 @@
-import { chainW, map } from "fp-ts/Either";
-import { pipe } from "fp-ts/function";
+import { chainW } from "fp-ts/Either";
 
 import { Config } from "../Client.js";
 import type { Interceptor, Interceptors, Merge } from "../Interceptor.js";
 import { add, copy, empty, make as makeInterceptor } from "../Interceptor.js";
 import { Body, isBody } from "./body.js";
-import {
-  filterStatusOk,
-  HttpResponse,
-  ResponseEither,
-} from "./response/index.js";
+import { filterStatusOk, ResponseEither } from "./response/index.js";
 
 import Timeout from "../Interceptors/Timeout.js";
 import BaseURL from "../Interceptors/Url.js";
@@ -60,7 +55,7 @@ export const create = <E, R>({
     init?: RequestInit | undefined
   ) => {
     const res = await adapter_(url, init);
-    return pipe(res, chainW(filterStatusOk));
+    return chainW((_: Response) => filterStatusOk(_))(res);
   };
 
   const method = (method: Method) => {
@@ -106,13 +101,7 @@ export const create = <E, R>({
 
       const res = await fn(url, { ...init, body, method, headers });
 
-      return new ResponseEither(
-        pipe(
-          res,
-          chainW(filterStatusOk),
-          map((res) => new HttpResponse(res))
-        )
-      );
+      return new ResponseEither(res);
     };
   };
 
