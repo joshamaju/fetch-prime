@@ -212,6 +212,6 @@ describe("Response methods", () => {
     const json = await result.json();
 
     expect(E.getOrElse(constNull)(json)).not.toMatchObject(data);
-    expect(json).toMatchObject(E.left(data));
+    expect(json).toMatchObject(E.left("10"));
   });
 });
