@@ -23,23 +23,23 @@ import * as E from "fp-ts/Either";
 import { fetch } from "fetch-prime/Fetch";
 import adapter from "fetch-prime/Adapters/Platform";
 
-const request = await fetch("/users")(adapter);
-const {response} = request;
+const res = await fetch(adapter)("/users");
 
-if (E.isRight(response) && response.right.ok) {
+if (E.isRight(res.response) && res.response.right.ok) {
   const users = await response.right.json();
 }
 
 // or
+import { fetch } from "fetch-prime/Fetch";
 import { andThen } from "fetch-prime/Function";
 import {filterStatusOk} from "fetch-prime/Response";
 
-const request = await fetch("/users")(adapter);
-const ok = andThen(request.response, filterStatusOk);
+const res = await fetch(adapter)("/users");
+const ok = andThen(res.response, filterStatusOk);
 const users = await andThen(ok, (res) => res.json());
 
 // or
-const response = await fetch("/users")(adapter);
+const response = await fetch(adapter)("/users");
 const users = await response.ok((res) => res.json());
 ```
 
@@ -60,9 +60,9 @@ const interceptors = Interceptor.add(Interceptor.empty(), BaseURL(baseURL));
 const interceptor = Interceptor.make(interceptors);
 
 // we finally make the HTTP adapter
-const intercept_adapter = interceptor(adapter);
+const intercept = interceptor(adapter);
 
-const response = await fetch("/users")(intercept_adapter);
+const response = await fetch(intercept)("/users");
 ```
 
 ## Adapters
@@ -84,13 +84,14 @@ import FetchAdapter from "fetch-prime/Adapters/Platform";
 - Logger
 - Status Filter
 - Bearer and Basic authentication
+- URLSearchParams
 
 ### Example
 
 Instead of checking if the response is ok i.e 200
 
 ```ts
-const response = await fetch("/users")(adapter);
+const response = await fetch(adapter)("/users");
 const users = await response.ok(res => res.json());
 ```
 
@@ -103,7 +104,7 @@ const interceptor = Interceptor.make(interceptors);
 
 const adapter = interceptor(Adapter);
 
-const response = await fetch("/users")(adapter);
+const response = await fetch(adapter)("/users");
 const users = await response.json();
 // ...
 ```
