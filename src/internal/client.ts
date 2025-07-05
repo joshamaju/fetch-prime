@@ -1,13 +1,34 @@
-import { chainW } from "fp-ts/Either";
+import {
+  chainW,
+  Either,
+  isLeft,
+  left,
+  map,
+  mapLeft,
+  right,
+} from "fp-ts/Either";
+import { pipe } from "fp-ts/function";
 
-import { Config } from "../Client.js";
-import type { Interceptor, Interceptors, Merge } from "../Interceptor.js";
+import { Config, DecodeType } from "../Client.js";
+import type {
+  Chain,
+  Interceptor,
+  Interceptors,
+  Merge,
+} from "../Interceptor.js";
 import { add, copy, empty, make as makeInterceptor } from "../Interceptor.js";
 import { Body, isBody } from "./body.js";
-import { filterStatusOk, ResponseEither } from "./response/index.js";
+import {
+  blob,
+  filterStatusOk,
+  json,
+  ResponseEither,
+  text,
+} from "./response/index.js";
 
 import Timeout from "../Interceptors/Timeout.js";
 import BaseURL from "../Interceptors/Url.js";
+import { DecodeError, TaggedError } from "./error.js";
 import { HttpRequest } from "./request.js";
 
 type Method = NonNullable<RequestInit["method"]>;
@@ -23,6 +44,7 @@ export const create = <E, R>({
   url,
   timeout,
   adapter,
+  responseType,
   // @ts-expect-error
   interceptors = empty(),
 }: Config<E, R>) => {
@@ -45,6 +67,65 @@ export const create = <E, R>({
     interceptors_ = add(interceptors_, timeout_interceptor);
   }
 
+  const decoder = async function (chain: Chain) {
+    const res = await chain.proceed(chain.request);
+
+    const isTaggedError = () => {};
+
+    if (isLeft(res)) {
+      const l = res.left;
+
+      if (
+        !("response" in l) ||
+        ("response" in l && !(l.response instanceof Response))
+      )
+        return res;
+    }
+
+    let a = res;
+
+    // console.log("here", res);
+
+    const init = chain.request.init;
+
+    // @ts-expect-error
+    const type = init?.responseType ?? responseType;
+
+    if (type && type !== "unset") {
+      const response = isLeft(res) ? res.left.response : res.right;
+
+      const status = response.status;
+      const headers = response.headers;
+      const statusText = response.statusText;
+
+      let result: Either<DecodeError, any>;
+
+      switch (type) {
+        case "text":
+          result = await text(response);
+          break;
+        case "blob":
+          result = await blob(response);
+          break;
+        default:
+          result = await json(response);
+      }
+
+      const data = { status, headers, statusText };
+
+      const n = pipe(
+        result,
+        map((data) => ({ ...data, data } as const)),
+        chainW((_) => (isLeft(res) ? left(_) : right(_))),
+        mapLeft((error) => ({ ...data, error } as const))
+      );
+    }
+  };
+
+  // @ts-expect-error
+  interceptors_.unshift(decoder);
+  // interceptors_ = add(interceptors_, decoder);
+
   const adapter_ =
     interceptors_.length <= 0
       ? adapter
@@ -55,15 +136,18 @@ export const create = <E, R>({
     init?: RequestInit | undefined
   ) => {
     const res = await adapter_(url, init);
-    return chainW((_: Response) => filterStatusOk(_))(res);
+    return res;
+    // return chainW((_: Response) => filterStatusOk(_))(res);
   };
+
+  type Init = RequestInit & { responseType?: DecodeType };
 
   const method = (method: Method) => {
     return async (
       url: string | URL | HttpRequest,
       init?:
-        | RequestInit
-        | (Omit<RequestInit, "body"> & { body?: Body | BodyInit })
+        | Init
+        | (Omit<Init, "body"> & { body?: Body | BodyInit })
         | Body
         | undefined
     ) => {
@@ -100,6 +184,13 @@ export const create = <E, R>({
       }
 
       const res = await fn(url, { ...init, body, method, headers });
+
+      const decode_type =
+        (init && !isBody(init) ? init.responseType : null) ?? responseType;
+
+      if (decode_type && decode_type !== "unset") {
+        return res;
+      }
 
       return new ResponseEither(res);
     };

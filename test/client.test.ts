@@ -196,3 +196,105 @@ describe("method", () => {
     expect(method).toBe("HEAD");
   });
 });
+
+describe("Automatic response decoding", () => {
+  test("should automatically decode response to json", async () => {
+    let data = { age: 10 };
+
+    const check = async (chain: Interceptor.Chain) => {
+      // await chain.proceed(chain.request);
+      return E.right(
+        new globalThis.Response(JSON.stringify(data), { status: 200 })
+      );
+    };
+
+    const interceptors = Interceptor.of(check);
+
+    const client = create({ interceptors, adapter: PlatformAdapter });
+
+    const res = await client.get("/users/2", { responseType: "json" });
+
+    console.log(res);
+
+    expect(res).toMatchObject(E.right({ data }));
+  });
+
+  test("should automatically decode response to text", async () => {
+    let data = "1000";
+
+    const check = async (chain: Interceptor.Chain) => {
+      return E.right(new globalThis.Response(data));
+    };
+
+    const interceptors = Interceptor.of(check);
+
+    const client = create({ interceptors, adapter: PlatformAdapter });
+
+    const res = await client.get("/users/2", { responseType: "text" });
+
+    expect(res).toMatchObject(E.right(data));
+  });
+
+  test("should not automatically decode response", async () => {
+    let data = { age: 10 };
+
+    const check = async (chain: Interceptor.Chain) => {
+      return E.right(new globalThis.Response(JSON.stringify(data)));
+    };
+
+    const interceptors = Interceptor.of(check);
+
+    const client = create({ interceptors, adapter: PlatformAdapter });
+
+    const res = await client.get("/users/2");
+
+    expect(res).not.toMatchObject(E.right(data));
+  });
+
+  test("should unset/reset automatically response decoding", async () => {
+    let data = { age: 10 };
+
+    const check = async (chain: Interceptor.Chain) => {
+      return E.right(new globalThis.Response(JSON.stringify(data)));
+    };
+
+    const interceptors = Interceptor.of(check);
+
+    const client = create({ interceptors, adapter: PlatformAdapter });
+
+    const res = await client.get("/users/2", { responseType: "unset" });
+    const json = await res.ok((_) => _.json());
+
+    expect(res).not.toMatchObject(E.right(data));
+    expect(json).toMatchObject(E.right(data));
+  });
+
+  // here
+  test("should automatically decode response to text", async () => {
+    let data = "1000";
+
+    const check = async (chain: Interceptor.Chain) => {
+      return E.right(new globalThis.Response(data));
+    };
+
+    const interceptors = Interceptor.of(check);
+
+    const client = create({
+      interceptors,
+      responseType: "blob",
+      adapter: PlatformAdapter,
+    });
+
+    const res = await client.get("/users/2");
+
+    if (E.isLeft(res)) {
+      if (res.left._tag == "Decode") {
+        res.left.error.cause;
+      }
+    } else {
+      res.right.data;
+    }
+
+    expect(res).toMatchObject(E.right(data));
+  });
+});
