@@ -1,18 +1,22 @@
-import { Either, left } from "fp-ts/Either";
-import { Reader } from "fp-ts/Reader";
+import { isLeft, left, right, type Either } from "fp-ts/Either";
+import type { Reader } from "fp-ts/Reader";
 
-import { Fetch } from "../Fetch.js";
-import { Chain, Interceptor, Interceptors } from "../Interceptor.js";
-import { HttpError } from "./error.js";
+import type { Fetch, Init } from "../Fetch.js";
+import type { Chain, Interceptor, Interceptors } from "../Interceptor.js";
+import { prepare } from "./body.js";
+import { TaggedError, type HttpError } from "./error.js";
 import { HttpRequest } from "./request.js";
+import { neverThrow } from "./function.js";
 
-export class InterceptorError {
+export class InterceptorError extends TaggedError {
   readonly _tag = "InterceptorError";
   constructor(
     readonly name: string,
     readonly index: number,
-    readonly cause: unknown
-  ) {}
+    opts: Parameters<typeof Error>[1]
+  ) {
+    super("InterceptorError", opts);
+  }
 }
 
 export function compose(
@@ -44,9 +48,13 @@ export function compose(
           proceed: (req) => dispatch(i + 1, req),
         };
 
-        return handler(chain).catch((e) =>
-          left((new InterceptorError(handler.name, i, e)))
-        );
+        return handler(chain).catch((e) => {
+          return left(
+            handler == initiator
+              ? e
+              : new InterceptorError(handler.name, i, { cause: e })
+          );
+        });
       }
 
       return dispatch(0, request);
@@ -54,10 +62,25 @@ export function compose(
 }
 
 export const make = <E, R>(interceptors: Interceptors<E, R>) => {
-  return function (fetch: Fetch<HttpError>): Fetch<E | InterceptorError> {
-    return (...args) => {
-      const fn = compose(({ request }) => fetch(request.url, request.init));
-      return fn(interceptors)(new HttpRequest(...args));
+  return function (fetch: Fetch<HttpError>) {
+    return (
+      url: string | URL,
+      init?: Init
+    ): Promise<Either<E | HttpError | InterceptorError, Response>> => {
+      const fn = compose(
+        async ({ request }): Promise<Either<HttpError, Response>> => {
+          const response = await neverThrow(fetch)(request.url, request.init);
+
+          if ("_tag" in response) {
+            if (isLeft(response)) throw response.left;
+            return response;
+          }
+
+          return right(response);
+        }
+      );
+
+      return fn(interceptors)(new HttpRequest(url, prepare(init)));
     };
   };
 };

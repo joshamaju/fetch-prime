@@ -4,7 +4,7 @@ import * as E from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 import * as T from "fp-ts/Task";
 
-import PlatformAdapter from "../src/Adapters/Platform.js";
+import PlatformAdapter from "../src/adapters/Platform.js";
 import { HttpError, StatusError } from "../src/Error.js";
 import * as Http from "../src/index.js";
 import * as Interceptor from "../src/Interceptor.js";
@@ -59,11 +59,9 @@ test("should call interceptors in provided order", async () => {
     Interceptor.add(error_interceptor)
   );
 
-  let interceptor = Interceptor.make(interceptors_asc)(PlatformAdapter);
+  let fetch_asc = Interceptor.make(interceptors_asc)(PlatformAdapter);
 
-  const program = Http.fetch(base_url + "/users/2");
-
-  await program(interceptor);
+  await fetch_asc(base_url + "/users/2");
 
   expect(order).toStrictEqual([1, 2, 3, 3, 2, 1]);
 
@@ -76,9 +74,9 @@ test("should call interceptors in provided order", async () => {
     Interceptor.add(first)
   );
 
-  const interceptor_desc = Interceptor.make(interceptors_desc)(PlatformAdapter);
+  const fetch_desc = Interceptor.make(interceptors_desc)(PlatformAdapter);
 
-  await Http.fetch(base_url + "/users/2")(interceptor_desc);
+  await fetch_desc(base_url + "/users/2");
 
   expect(order).toStrictEqual([3, 2, 1, 1, 2, 3]);
 });
@@ -109,11 +107,11 @@ test("every interceptor should receive the result of the next interceptor", asyn
     Interceptor.add(third)
   );
 
-  const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
+  const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch(base_url + "/users/2")(interceptor);
+  const res = await fetch(base_url + "/users/2");
 
-  const result = await res.ok((_) => _.text());
+  const result = await Http.andThen(Result.filterStatusOk(res), Result.text);
 
   expect((result as E.Right<any>).right).toBe("4");
 });
@@ -134,10 +132,10 @@ test("should return early without calling the next interceptor", async () => {
     Interceptor.add(mutate)
   );
 
-  const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
+  const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch(base_url + "/users/2")(interceptor);
-  const result = await Http.andThen(res.response, (_) => _.text());
+  const res = await fetch(base_url + "/users/2");
+  const result = await Http.andThen(Result.filterStatusOk(res), Result.text);
 
   expect((result as E.Right<any>).right).toBe("10");
   expect(variable).toBe(1);
@@ -145,10 +143,10 @@ test("should return early without calling the next interceptor", async () => {
 
 test("should create handler with single interceptor", async () => {
   const interceptors = Interceptor.of(base_url_interceptor);
-  const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
+  const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch("/users/2")(interceptor);
-  const result = await res.ok((_) => _.json());
+  const res = await fetch("/users/2");
+  const result = await Http.andThen(Result.filterStatusOk(res), Result.json);
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -160,11 +158,11 @@ test("should create handler with early error interceptor", async () => {
     Interceptor.add(error_interceptor)
   );
 
-  const newAdapter = Interceptor.make(interceptors)(adapter);
+  const fetch = Interceptor.make(interceptors)(adapter);
 
-  const res = await Http.fetch("/users/2")(newAdapter);
+  const res = await fetch("/users/2");
 
-  const result = await res.ok((_) => _.json());
+  const result = await Http.andThen(Result.filterStatusOk(res), Result.json);
 
   expect(E.isLeft(result)).toBeTruthy();
 
@@ -183,10 +181,10 @@ test("should create handler with early success response", async () => {
     Interceptor.add(evil_interceptor)
   );
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch("/users/2")(adapter);
-  const result = await res.ok((_) => _.json());
+  const res = await fetch("/users/2");
+  const result = await Http.andThen(Result.filterStatusOk(res), Result.json);
 
   expect((result as E.Right<any>).right.data.id).not.toBe(2);
   expect((result as E.Right<any>).right.data.id).toBe("😈 evil");
@@ -202,9 +200,9 @@ test("should copy/inherit interceptors", async () => {
 
   const clone = Interceptor.add(Interceptor.copy(interceptors), explode);
 
-  const adapter = Interceptor.make(clone)(PlatformAdapter);
+  const fetch = Interceptor.make(clone)(PlatformAdapter);
 
-  const result = await Http.fetch_("/users/2")(adapter);
+  const result = await fetch("/users/2");
 
   expect(clone.length).not.toEqual(interceptors.length);
   expect(result).toEqual(E.left({ explosive: "boom" }));
@@ -224,9 +222,9 @@ test("should attach url to every outgoing request", async () => {
     Interceptor.add(base_url_interceptor)
   );
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch_("/users/2")(adapter);
+  const res = await fetch("/users/2");
 
   expect(url).toBe("/users/2");
   expect((res as Extract<typeof res, { _tag: "Right" }>).right.url).toBe(
@@ -235,13 +233,13 @@ test("should attach url to every outgoing request", async () => {
 });
 
 test("should make interceptor from effect", async () => {
-  const adapter = function () {
+  const fetch = function () {
     const interceptors = Interceptor.of(BaseURL(base_url));
     return Interceptor.make(interceptors)(PlatformAdapter);
   };
 
-  const res = await Http.fetch("/users/2")(adapter());
-  const result = await res.ok((_) => _.json());
+  const res = await fetch()("/users/2");
+  const result = await Http.andThen(Result.filterStatusOk(res), Result.json);
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -256,10 +254,10 @@ test("should make interceptor from effect with additional requirements", async (
 
   const interceptors = Interceptor.of(await url({ get: T.of(base_url) }));
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-  let res = await Http.fetch("/users/2")(adapter);
-  const result = await res.ok((_) => _.json());
+  let res = await fetch("/users/2");
+  const result = await Http.andThen(Result.filterStatusOk(res), Result.json);
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -270,9 +268,9 @@ test("request timeout interceptor", async () => {
     Interceptor.add(Timeout(500))
   );
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const result = await Http.fetch_("/users/2?delay=10")(adapter);
+  const result = await fetch("/users/2?delay=10");
 
   const err = (result as Extract<typeof result, { _tag: "Left" }>).left;
 
@@ -301,9 +299,9 @@ describe("error handling", () => {
       Interceptor.add(second)
     );
 
-    const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
+    const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-    await Http.fetch(base_url + "/users/2")(interceptor);
+    await fetch(base_url + "/users/2");
 
     expect(E.isLeft(result)).toBeTruthy();
     expect((result as any as E.Left<string>).left).toBe("error");
@@ -328,9 +326,9 @@ describe("error handling", () => {
       Interceptor.add(second)
     );
 
-    const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
+    const fetch = Interceptor.make(interceptors)(PlatformAdapter);
 
-    await Http.fetch(base_url + "/users/2")(interceptor);
+    await fetch(base_url + "/users/2");
 
     const err = _res!.left as InterceptorError;
 
@@ -352,19 +350,26 @@ describe("Interceptors", () => {
     );
 
     test("should partition to ok response", async () => {
-      const newAdapter = Interceptor.make(interceptors)(adapter);
+      const fetch = Interceptor.make(interceptors)(adapter);
 
-      const res = await Http.fetch("/users/2")(newAdapter);
-      const result = await res.json();
+      const res = await fetch("/users/2");
+      const result = await Http.andThen(
+        Result.filterStatusOk(res),
+        Result.json
+      );
 
       expect((result as E.Right<any>).right.data.id).toBe(2);
     });
 
     test("should partition to error response", async () => {
-      const newAdapter = Interceptor.make(interceptors)(adapter);
+      const fetch = Interceptor.make(interceptors)(adapter);
 
-      const res = await Http.fetch("/users/23")(newAdapter);
-      const result = await res.json();
+      const res = await fetch("/users/23");
+
+      const result = await Http.andThen(
+        Result.filterStatusOk(res),
+        Result.json
+      );
 
       expect((result as E.Left<any>).left).toBeInstanceOf(StatusError);
     });

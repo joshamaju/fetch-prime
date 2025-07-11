@@ -52,12 +52,6 @@ export {
    * @category model
    */
   HttpResponse,
-
-  /**
-   * @since 0.1.0
-   * @category model
-   */
-  HttpResponseEither,
 } from "./internal/response/index.js";
 
 /**
@@ -101,9 +95,18 @@ export const arrayBuffer: (
  * @since 0.0.1
  * @category filtering
  */
-export const filterStatusOk: <R extends Response | HttpResponse>(
-  response: R
-) => Either<StatusError, R> = core.filterStatusOk;
+
+export function filterStatusOk<E extends never>(
+  response: HttpResponse<E>
+): Either<StatusError, Response>;
+export function filterStatusOk<E>(
+  response: HttpResponse<E>
+): Either<E | StatusError, Response>;
+export function filterStatusOk<E>(
+  response: HttpResponse<E>
+): Either<E | StatusError, Response> {
+  return core.filterStatusOk(response);
+}
 
 /**
  * @since 0.0.1

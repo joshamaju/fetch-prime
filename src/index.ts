@@ -35,7 +35,7 @@ export * as Interceptor from "./Interceptor.js";
 /**
  * @since 0.0.1
  */
-export * as Adapters from "./Adapters/index.js";
+export * as Adapters from "./adapters/index.js";
 
 /**
  * @since 0.0.1

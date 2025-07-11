@@ -7,7 +7,7 @@ import { Reader } from "fp-ts/Reader";
 
 import { dual } from "./internal/utils.js";
 import { HttpError } from "./Error.js";
-import { Fetch } from "./Fetch.js";
+import { Fetch, HttpResponse, Init } from "./Fetch.js";
 import * as core from "./internal/interceptor.js";
 import { HttpRequest } from "./internal/request.js";
 import { InterceptorError } from "./internal/interceptor.js";
@@ -17,19 +17,18 @@ export {
    * @since 0.0.1
    * @category model
    */
-  InterceptorError
+  InterceptorError,
 } from "./internal/interceptor.js";
 
 /** @internal */
 export type Merge<
   I extends Interceptors<any, any>,
-  T extends Interceptor<any, any>,
-> =
-  I extends Interceptors<infer R1, infer E1>
-    ? T extends Interceptor<infer R2, infer E2>
-      ? Interceptors<R1 | R2, E1 | E2>
-      : never
-    : never;
+  T extends Interceptor<any, any>
+> = I extends Interceptors<infer R1, infer E1>
+  ? T extends Interceptor<infer R2, infer E2>
+    ? Interceptors<R1 | R2, E1 | E2>
+    : never
+  : never;
 
 type NextFunction = (
   request: HttpRequest
@@ -75,9 +74,9 @@ export const empty: () => Interceptors<never, never> = core.empty;
  * @category combinator
  */
 export const add: {
-  <T extends Interceptor<any, any>>(
-    interceptor: T
-  ): <E, R>(interceptors: Interceptors<E, R>) => Merge<Interceptors<E, R>, T>;
+  <T extends Interceptor<any, any>>(interceptor: T): <E, R>(
+    interceptors: Interceptors<E, R>
+  ) => Merge<Interceptors<E, R>, T>;
   <T extends Interceptor<any, any>, E, R>(
     interceptors: Interceptors<E, R>,
     interceptor: T
@@ -104,5 +103,9 @@ export const copy: <E, R>(
  */
 export const make: <E, R>(
   interceptors: Interceptors<E, R>
-) => (fetch: Fetch<HttpError>) => Fetch<E | HttpError | InterceptorError> =
-  core.make;
+) => (
+  fetch: Fetch<HttpError>
+) => (
+  url: string | URL,
+  init?: Init
+) => Promise<Either<E | HttpError | InterceptorError, Response>> = core.make;
