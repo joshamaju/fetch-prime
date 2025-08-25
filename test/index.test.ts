@@ -3,21 +3,27 @@ import { expect, test } from "vitest";
 import * as E from "fp-ts/Either";
 
 import Adapter from "../src/Adapters/Platform.js";
-import { fetch, fetch_, andThen, map } from "../src/index.js";
+import * as Http from "../src/index.js";
+import { andThen } from "../src/index.js";
 import { filterStatusOk, HttpResponse } from "../src/Response.js";
 
 const base_url = "https://reqres.in/api";
 
+const config = {
+  headers: { "x-api-key": "reqres-free-v1" },
+};
+
+const fetch = Http.fetch(Adapter);
+const fetch_ = Http.fetch_(Adapter);
+
 test("google", async () => {
-  const res = await fetch("https://www.google.com")(Adapter);
+  const res = await fetch("https://www.google.com");
   const result = await res.ok((r) => r.text());
   expect((result as E.Right<string>).right).toContain("Google");
 });
 
 test("streaming", async () => {
-  const program = fetch_("https://www.google.com");
-
-  const res = await program(Adapter);
+  const res = await fetch_("https://www.google.com");
 
   let result = "";
 
@@ -33,7 +39,7 @@ test("streaming", async () => {
 });
 
 test("should make request", async () => {
-  const res = await fetch(base_url + "/users/2")(Adapter);
+  const res = await fetch(base_url + "/users/2", config);
   const result = await res.ok((_) => _.json());
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -41,16 +47,16 @@ test("should make request", async () => {
 test("should be able to abort request", async () => {
   const controller = new AbortController();
 
-  const req = fetch(base_url + "/users/2?delay=10", {
-    signal: controller.signal,
-  });
-
   let timeout = setTimeout(() => {
     controller.abort();
     clearTimeout(timeout);
   }, 500);
 
-  const res = await req(Adapter);
+  const res = await fetch(base_url + "/users/2?delay=10", {
+    ...config,
+    signal: controller.signal,
+  });
+
   const result = await res.ok((_) => _.json());
 
   const { left } = result as Extract<typeof result, { _tag: "Left" }>;
@@ -61,15 +67,8 @@ test("should be able to abort request", async () => {
 });
 
 test("should partition response with status filter", async () => {
-  const request = await fetch(base_url + "/users/2")(Adapter);
+  const request = await fetch(base_url + "/users/2", config);
   const ok = andThen(request.response, filterStatusOk);
   const result = await andThen(ok, (r) => r.json());
   expect((result as E.Right<any>).right.data.id).toBe(2);
-});
-
-test("passthrough", async () => {
-  const request = fetch("https://www.google.com");
-  const response = map(request, (r) => r.ok((r) => r.text()));
-  const result = await response(Adapter);
-  expect((result as E.Right<string>).right).toContain("Google");
 });

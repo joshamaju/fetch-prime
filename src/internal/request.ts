@@ -15,7 +15,7 @@ export class HttpRequest {
 
   constructor(
     private _url: string | URL | HttpRequest,
-    readonly init?: RequestInit
+    readonly init?: RequestInit,
   ) {}
 
   get request(): Request {

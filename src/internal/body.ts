@@ -1,3 +1,5 @@
+import { Init } from "../Fetch.js";
+
 interface Base {
   readonly _id: string;
   readonly _tag: string;
@@ -55,7 +57,7 @@ export function json(input: object): Json {
 }
 
 export function form(
-  input: FormData | Record<string, string | Array<unknown>>
+  input: FormData | Record<string, string | Array<unknown>>,
 ): Form {
   const formData = new FormData();
 
@@ -81,4 +83,44 @@ export function form(
       "Content-Type": "application/x-www-form-urlencoded",
     },
   };
+}
+
+export function prepare(init: Init) {
+  let rest: RequestInit = {};
+  let body: RequestInit["body"];
+  let headers: RequestInit["headers"];
+
+  if (isBody(init)) {
+    body = init.value;
+    headers = init.headers;
+  } else {
+    let { body: local_body, headers: local_headers, ..._ } = init ?? {};
+
+    if (local_body && isBody(local_body)) {
+      const body = local_body;
+
+      if (local_headers) {
+        const headers = {
+          ...Object.fromEntries(Object.entries(local_headers)),
+        };
+
+        for (const key in body.headers) {
+          headers[key] = body.headers[key];
+        }
+
+        local_headers = headers;
+      } else {
+        local_headers = body.headers;
+      }
+
+      local_body = body.value;
+    }
+
+    rest = _;
+
+    body = local_body;
+    headers = local_headers;
+  }
+
+  return { ...rest, body, headers };
 }

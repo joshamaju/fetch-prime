@@ -4,7 +4,7 @@ import { pipe } from "fp-ts/function";
 import * as E from "fp-ts/Either";
 
 import { andThen } from "../src/Function.js";
-import PlatformAdapter from "../src/Adapters/Platform.js";
+import adapter from "../src/Adapters/Platform.js";
 import * as Http from "../src/Client.js";
 import * as Interceptor from "../src/Interceptor.js";
 import { TimeoutError } from "../src/Interceptors/Timeout.js";
@@ -12,17 +12,38 @@ import BaseURL from "../src/Interceptors/Url.js";
 import { json } from "../src/internal/body.js";
 import * as Response from "../src/Response.js";
 import { HttpError } from "../src/Error.js";
+import { HttpRequest } from "../src/Request.js";
 
 const base_url = "https://reqres.in/api";
 
 const base_url_interceptor = BaseURL(base_url);
 
+const config = {
+  headers: { "x-api-key": "reqres-free-v1" },
+};
+
+const headers_interceptor = async function (chain: Interceptor.Chain) {
+  const { url, init } = chain.request;
+
+  const req = new HttpRequest(url, {
+    ...init,
+    ...config,
+    headers: { ...init?.headers, ...config.headers },
+  });
+
+  return chain.proceed(req);
+};
+
+const interceptors = Interceptor.of(headers_interceptor);
+
+const client = Http.create({ adapter, interceptors, url: base_url });
+
 test("should make client with http methods", async () => {
-  const interceptors = Interceptor.of(base_url_interceptor);
+  const interceptors = Interceptor.of(headers_interceptor);
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const client = Http.create({ adapter, interceptors, url: base_url });
 
-  const res = await Http.get("/users/2")(adapter);
+  const res = await client.get("/users/2");
   const json = await andThen(res, Response.json);
 
   const result = json as Extract<typeof result, { _tag: "Right" }>;
@@ -31,9 +52,13 @@ test("should make client with http methods", async () => {
 });
 
 test("should make client with base URL for every request", async () => {
-  const client = Http.create({ url: base_url, adapter: PlatformAdapter });
+  const client = Http.create({
+    interceptors,
+    url: base_url,
+    adapter: adapter,
+  });
 
-  const res = await Http.get("/users/2")(client);
+  const res = await client.get("/users/2");
 
   const result = await andThen(res, Response.json);
 
@@ -41,10 +66,15 @@ test("should make client with base URL for every request", async () => {
 });
 
 test("should make client with interceptors", async () => {
-  const interceptors = Interceptor.of(base_url_interceptor);
-  const client = Http.create({ interceptors, adapter: PlatformAdapter });
+  const interceptors = Interceptor.of(headers_interceptor);
 
-  const res = await Http.get("/users/2")(client);
+  const client = Http.create({
+    interceptors,
+    url: base_url,
+    adapter: adapter,
+  });
+
+  const res = await client.get("/users/2");
 
   const result = await andThen(res, Response.json);
 
@@ -63,14 +93,15 @@ test("should attach JSON body and headers", async () => {
 
   const interceptors = pipe(
     Interceptor.of(base_url_interceptor),
-    Interceptor.add(spy)
+    Interceptor.add(headers_interceptor),
+    Interceptor.add(spy),
   );
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const client = Http.create({ interceptors, adapter: adapter });
 
   const body_json = json({ name: "morpheus", job: "leader" });
 
-  const res = await Http.post("/users", body_json)(adapter);
+  const res = await client.post("/users", body_json);
 
   const result = await andThen(res, Response.json);
 
@@ -94,15 +125,16 @@ test("should attach JSON body and headers with custom headers", async () => {
 
   const interceptors = pipe(
     Interceptor.of(base_url_interceptor),
-    Interceptor.add(spy)
+    Interceptor.add(headers_interceptor),
+    Interceptor.add(spy),
   );
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const client = Http.create({ interceptors, adapter: adapter });
 
-  const res = await Http.post("/users", {
-    headers: { "X-API-Key": "Bearer <APIKEY>" },
+  const res = await client.post("/users", {
+    headers: { "X-API-Key-2": "Bearer <APIKEY>" },
     body: json({ name: "morpheus", job: "leader" }),
-  })(adapter);
+  });
 
   const result = await andThen(res, Response.json);
 
@@ -111,20 +143,19 @@ test("should attach JSON body and headers with custom headers", async () => {
     job: "leader",
   });
 
-  expect(headers.get("X-API-Key")).toBe("Bearer <APIKEY>");
+  expect(headers.get("X-API-Key-2")).toBe("Bearer <APIKEY>");
 });
 
 describe("timeout", () => {
-  const program = Http.get("/users/2?delay=10");
-
   test("with number timeout", async () => {
     const client = Http.create({
       timeout: 100,
+      interceptors,
       url: base_url,
-      adapter: PlatformAdapter,
+      adapter: adapter,
     });
 
-    const result = await program(client);
+    const result = await client.get("/users/2?delay=10");
 
     expect(E.isLeft(result)).toBeTruthy();
     expect((result as E.Left<any>).left).instanceOf(HttpError);
@@ -143,9 +174,13 @@ describe("method", () => {
 
     const interceptors = Interceptor.of(check);
 
-    const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
+    const client = Http.create({
+      interceptors,
+      url: base_url,
+      adapter: adapter,
+    });
 
-    await Http.post("/users/2")(interceptor);
+    await client.post("/users/2");
 
     expect(method).toBe("POST");
   });
@@ -159,8 +194,14 @@ describe("method", () => {
     };
 
     const interceptors = Interceptor.of(check);
-    const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
-    await Http.head("/users/2")(interceptor);
+
+    const client = Http.create({
+      interceptors,
+      url: base_url,
+      adapter: adapter,
+    });
+
+    await client.head("/users/2");
 
     expect(method).toBe("HEAD");
   });
