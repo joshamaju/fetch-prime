@@ -7,7 +7,7 @@ import { HttpError } from "./internal/error.js";
 import * as core from "./internal/fetch.js";
 import { HttpRequest } from "./internal/request.js";
 import { HttpResponseEither } from "./internal/response/index.js";
-import { Body } from "./internal/body.js";
+import { Body } from "./Body.js";
 
 /**
  * @since 0.0.1

@@ -69,10 +69,6 @@
       "import": "./dist/Error.js",
       "types": "./dist/dts/Error.d.ts"
     },
-    "./Adapters": {
-      "import": "./dist/adapters/index.js",
-      "types": "./dist/dts/adapters/index.d.ts"
-    },
     "./Adapters/*": {
       "import": "./dist/adapters/*.js",
       "types": "./dist/dts/adapters/*.d.ts"

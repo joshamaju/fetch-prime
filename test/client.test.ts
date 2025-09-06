@@ -9,7 +9,7 @@ import * as Http from "../src/Client.js";
 import * as Interceptor from "../src/Interceptor.js";
 import { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
-import { json } from "../src/internal/body.js";
+import { json } from "../src/Body.js";
 import * as Response from "../src/Response.js";
 import { HttpError } from "../src/Error.js";
 import { HttpRequest } from "../src/Request.js";
