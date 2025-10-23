@@ -46,7 +46,7 @@ test("should make client with http methods", async () => {
   const res = await client.get("/users/2");
   const json = await andThen(res, Response.json);
 
-  const result = json as Extract<typeof result, { _tag: "Right" }>;
+  const result = json as Extract<typeof json, { _tag: "Right" }>;
 
   expect(result.right.data.id).toBe(2);
 });
@@ -82,8 +82,8 @@ test("should make client with interceptors", async () => {
 });
 
 test("should attach JSON body and headers", async () => {
-  let body;
-  let headers;
+  let headers: Headers | undefined;
+  let body: BodyInit | null | undefined;
 
   const spy = (chain: Interceptor.Chain) => {
     body = chain.request.init?.body;
@@ -94,7 +94,7 @@ test("should attach JSON body and headers", async () => {
   const interceptors = pipe(
     Interceptor.of(base_url_interceptor),
     Interceptor.add(headers_interceptor),
-    Interceptor.add(spy),
+    Interceptor.add(spy)
   );
 
   const client = Http.create({ interceptors, adapter: adapter });
@@ -111,12 +111,12 @@ test("should attach JSON body and headers", async () => {
   });
 
   expect(body).toBe('{"name":"morpheus","job":"leader"}');
-  expect(headers.get("Content-Type")).toBe("application/json");
-  expect(headers.has("Content-Length")).toBeTruthy();
+  expect(headers?.get("Content-Type")).toBe("application/json");
+  expect(headers?.has("Content-Length")).toBeTruthy();
 });
 
 test("should attach JSON body and headers with custom headers", async () => {
-  let headers;
+  let headers: Headers | undefined;
 
   const spy = (chain: Interceptor.Chain) => {
     headers = new Headers(chain.request.init?.headers);
@@ -126,7 +126,7 @@ test("should attach JSON body and headers with custom headers", async () => {
   const interceptors = pipe(
     Interceptor.of(base_url_interceptor),
     Interceptor.add(headers_interceptor),
-    Interceptor.add(spy),
+    Interceptor.add(spy)
   );
 
   const client = Http.create({ interceptors, adapter: adapter });
@@ -143,7 +143,7 @@ test("should attach JSON body and headers with custom headers", async () => {
     job: "leader",
   });
 
-  expect(headers.get("X-API-Key-2")).toBe("Bearer <APIKEY>");
+  expect(headers?.get("X-API-Key-2")).toBe("Bearer <APIKEY>");
 });
 
 describe("timeout", () => {
