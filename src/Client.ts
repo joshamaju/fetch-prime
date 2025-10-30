@@ -8,7 +8,7 @@ import { Interceptors } from "./Interceptor.js";
 import { TimeoutError } from "./Interceptors/Timeout.js";
 import { Body } from "./internal/body.js";
 import * as core from "./internal/client.js";
-import { HttpError } from "./internal/error.js";
+import { DecodeError, HttpError } from "./internal/error.js";
 import { HttpRequest } from "./internal/request.js";
 import { ResponseEither } from "./Response.js";
 
