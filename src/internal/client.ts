@@ -27,7 +27,7 @@ export const create = <E, R>({
   url,
   timeout,
   adapter,
-  responseType,
+  // responseType,
   // @ts-expect-error
   interceptors = empty(),
 }: Config<E, R>) => {
@@ -50,60 +50,60 @@ export const create = <E, R>({
     interceptors_ = add(interceptors_, timeout_interceptor);
   }
 
-  const decoder = async function (chain: Chain) {
-    const res = await chain.proceed(chain.request);
+  // const decoder = async function (chain: Chain) {
+  //   const res = await chain.proceed(chain.request);
 
-    const isTaggedError = () => {};
+  //   const isTaggedError = () => {};
 
-    if (isLeft(res)) {
-      const l = res.left;
+  //   if (isLeft(res)) {
+  //     const l = res.left;
 
-      if (
-        !("response" in l) ||
-        ("response" in l && !(l.response instanceof Response))
-      )
-        return res;
-    }
+  //     if (
+  //       !("response" in l) ||
+  //       ("response" in l && !(l.response instanceof Response))
+  //     )
+  //       return res;
+  //   }
 
-    let a = res;
+  //   let a = res;
 
-    // console.log("here", res);
+  //   // console.log("here", res);
 
-    const init = chain.request.init;
+  //   const init = chain.request.init;
 
-    // // @ts-expect-error
-    // const type = init?.responseType ?? responseType;
+  //   // // @ts-expect-error
+  //   // const type = init?.responseType ?? responseType;
 
-    // if (type && type !== "unset") {
-    //   const response = isLeft(res) ? res.left.response : res.right;
+  //   // if (type && type !== "unset") {
+  //   //   const response = isLeft(res) ? res.left.response : res.right;
 
-    //   const status = response.status;
-    //   const headers = response.headers;
-    //   const statusText = response.statusText;
+  //   //   const status = response.status;
+  //   //   const headers = response.headers;
+  //   //   const statusText = response.statusText;
 
-    //   let result: Either<DecodeError, any>;
+  //   //   let result: Either<DecodeError, any>;
 
-    //   switch (type) {
-    //     case "text":
-    //       result = await text(response);
-    //       break;
-    //     case "blob":
-    //       result = await blob(response);
-    //       break;
-    //     default:
-    //       result = await json(response);
-    //   }
+  //   //   switch (type) {
+  //   //     case "text":
+  //   //       result = await text(response);
+  //   //       break;
+  //   //     case "blob":
+  //   //       result = await blob(response);
+  //   //       break;
+  //   //     default:
+  //   //       result = await json(response);
+  //   //   }
 
-    //   const data = { status, headers, statusText };
+  //   //   const data = { status, headers, statusText };
 
-    //   const n = pipe(
-    //     result,
-    //     map((data) => ({ ...data, data } as const)),
-    //     chainW((_) => (isLeft(res) ? left(_) : right(_))),
-    //     mapLeft((error) => ({ ...data, error } as const))
-    //   );
-    // }
-  };
+  //   //   const n = pipe(
+  //   //     result,
+  //   //     map((data) => ({ ...data, data } as const)),
+  //   //     chainW((_) => (isLeft(res) ? left(_) : right(_))),
+  //   //     mapLeft((error) => ({ ...data, error } as const))
+  //   //   );
+  //   // }
+  // };
 
   // // @ts-expect-error
   // interceptors_.unshift(decoder);
