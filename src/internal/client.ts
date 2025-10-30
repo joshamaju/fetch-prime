@@ -40,6 +40,10 @@ type MaybeMerge<I extends Interceptors<any, any>, T> = T extends Interceptor<
   ? Merge<I, T>
   : I;
 
+function isRecord(obj: any): obj is Record<string, string> {
+  return Object.prototype.toString.call(obj) === "[object Object]";
+}
+
 export const create = <E, R>({
   url,
   timeout,
@@ -88,42 +92,42 @@ export const create = <E, R>({
 
     const init = chain.request.init;
 
-    // @ts-expect-error
-    const type = init?.responseType ?? responseType;
+    // // @ts-expect-error
+    // const type = init?.responseType ?? responseType;
 
-    if (type && type !== "unset") {
-      const response = isLeft(res) ? res.left.response : res.right;
+    // if (type && type !== "unset") {
+    //   const response = isLeft(res) ? res.left.response : res.right;
 
-      const status = response.status;
-      const headers = response.headers;
-      const statusText = response.statusText;
+    //   const status = response.status;
+    //   const headers = response.headers;
+    //   const statusText = response.statusText;
 
-      let result: Either<DecodeError, any>;
+    //   let result: Either<DecodeError, any>;
 
-      switch (type) {
-        case "text":
-          result = await text(response);
-          break;
-        case "blob":
-          result = await blob(response);
-          break;
-        default:
-          result = await json(response);
-      }
+    //   switch (type) {
+    //     case "text":
+    //       result = await text(response);
+    //       break;
+    //     case "blob":
+    //       result = await blob(response);
+    //       break;
+    //     default:
+    //       result = await json(response);
+    //   }
 
-      const data = { status, headers, statusText };
+    //   const data = { status, headers, statusText };
 
-      const n = pipe(
-        result,
-        map((data) => ({ ...data, data } as const)),
-        chainW((_) => (isLeft(res) ? left(_) : right(_))),
-        mapLeft((error) => ({ ...data, error } as const))
-      );
-    }
+    //   const n = pipe(
+    //     result,
+    //     map((data) => ({ ...data, data } as const)),
+    //     chainW((_) => (isLeft(res) ? left(_) : right(_))),
+    //     mapLeft((error) => ({ ...data, error } as const))
+    //   );
+    // }
   };
 
-  // @ts-expect-error
-  interceptors_.unshift(decoder);
+  // // @ts-expect-error
+  // interceptors_.unshift(decoder);
   // interceptors_ = add(interceptors_, decoder);
 
   const adapter_ =
@@ -165,10 +169,16 @@ export const create = <E, R>({
           const body = local_body;
 
           if (local_headers) {
-            const headers = new Headers(local_headers);
+            const headers = local_headers;
 
             for (const key in body.headers) {
-              headers.set(key, body.headers[key]);
+              if (Array.isArray(headers)) {
+                headers.push([key, body.headers[key]]);
+              } else if (isRecord(headers)) {
+                headers[key] = body.headers[key];
+              } else {
+                headers.set(key, body.headers[key]);
+              }
             }
 
             local_headers = headers;
@@ -185,12 +195,12 @@ export const create = <E, R>({
 
       const res = await fn(url, { ...init, body, method, headers });
 
-      const decode_type =
-        (init && !isBody(init) ? init.responseType : null) ?? responseType;
+      // const decode_type =
+      //   (init && !isBody(init) ? init.responseType : null) ?? responseType;
 
-      if (decode_type && decode_type !== "unset") {
-        return res;
-      }
+      // if (decode_type && decode_type !== "unset") {
+      //   return res;
+      // }
 
       return new ResponseEither(res);
     };

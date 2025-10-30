@@ -290,7 +290,7 @@ test("request timeout interceptor", async () => {
 
 describe("error handling", () => {
   test("should receive returned error by interceptor in the chain", async () => {
-    let result;
+    let result: E.Either<any, any> | undefined;
 
     const first = async function (chain: Interceptor.Chain) {
       const res = await chain.proceed(chain.request);
@@ -310,7 +310,7 @@ describe("error handling", () => {
 
     await fetch_(interceptor)(base_url + "/users/2");
 
-    expect(E.isLeft(result)).toBeTruthy();
+    expect(E.isLeft(result!)).toBeTruthy();
     expect((result as any as E.Left<string>).left).toBe("error");
   });
 
