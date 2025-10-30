@@ -15,12 +15,17 @@ import Timeout, { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
 import { StatusOK } from "../src/Interceptors/StatusFilter.js";
 import { URLSearchParams } from "../src/Interceptors/index.js";
+import Config from "../src/Interceptors/Config.js";
 
 const adapter = PlatformAdapter;
 
 const base_url = "https://reqres.in/api";
 
 const base_url_interceptor = BaseURL(base_url);
+
+const headers_interceptor = Config({
+  headers: { "x-api-key": "reqres-free-v1" },
+});
 
 class Err {
   readonly _tag = "Err";
@@ -107,7 +112,8 @@ test("every interceptor should receive the result of the next interceptor", asyn
     Interceptor.empty(),
     Interceptor.add(first),
     Interceptor.add(second),
-    Interceptor.add(third)
+    Interceptor.add(third),
+    Interceptor.add(headers_interceptor)
   );
 
   const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
@@ -132,7 +138,8 @@ test("should return early without calling the next interceptor", async () => {
   const interceptors = pipe(
     Interceptor.empty(),
     Interceptor.add(early),
-    Interceptor.add(mutate)
+    Interceptor.add(mutate),
+    Interceptor.add(headers_interceptor)
   );
 
   const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
@@ -145,7 +152,11 @@ test("should return early without calling the next interceptor", async () => {
 });
 
 test("should create handler with single interceptor", async () => {
-  const interceptors = Interceptor.of(base_url_interceptor);
+  const interceptors = pipe(
+    Interceptor.of(base_url_interceptor),
+    Interceptor.add(headers_interceptor)
+  );
+
   const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
 
   const res = await fetch_(interceptor)("/users/2");
@@ -224,7 +235,8 @@ test("should attach url to every outgoing request", async () => {
   const interceptors = pipe(
     Interceptor.empty(),
     Interceptor.add(spy),
-    Interceptor.add(base_url_interceptor)
+    Interceptor.add(base_url_interceptor),
+    Interceptor.add(headers_interceptor)
   );
 
   const adapter = Interceptor.make(interceptors)(PlatformAdapter);
@@ -240,7 +252,10 @@ test("should attach url to every outgoing request", async () => {
 
 test("should make interceptor from thunk", async () => {
   const adapter = function () {
-    const interceptors = Interceptor.of(BaseURL(base_url));
+    const interceptors = pipe(
+      Interceptor.of(BaseURL(base_url)),
+      Interceptor.add(headers_interceptor)
+    );
     return Interceptor.make(interceptors)(PlatformAdapter);
   };
 
@@ -258,7 +273,10 @@ test("should make interceptor from thunk with additional requirements", async ()
     return BaseURL(url);
   };
 
-  const interceptors = Interceptor.of(await url({ get: T.of(base_url) }));
+  const interceptors = pipe(
+    Interceptor.of(await url({ get: T.of(base_url) })),
+    Interceptor.add(headers_interceptor)
+  );
 
   const adapter = Interceptor.make(interceptors)(PlatformAdapter);
 
@@ -353,6 +371,7 @@ describe("Interceptors", () => {
     const interceptors = pipe(
       Interceptor.empty(),
       Interceptor.add(base_url_interceptor),
+      Interceptor.add(headers_interceptor),
       Interceptor.add(StatusOK)
     );
 
@@ -379,6 +398,7 @@ describe("Interceptors", () => {
     const interceptors = pipe(
       Interceptor.empty(),
       Interceptor.add(base_url_interceptor),
+      Interceptor.add(headers_interceptor),
       Interceptor.add(URLSearchParams)
     );
 
