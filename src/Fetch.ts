@@ -23,10 +23,9 @@ export type Init =
  * @category model
  */
 export interface Adapter {
-  (
-    url: string | URL | HttpRequest,
-    init?: RequestInit,
-  ): Promise<Either<HttpError, Response>>;
+  (url: string | URL | HttpRequest, init?: RequestInit): Promise<
+    Either<HttpError, Response>
+  >;
 }
 
 /**
@@ -41,20 +40,20 @@ export type Fetch<E> = (
  * @since 0.0.1
  * @category constructor
  */
-export const fetch_: <E>(
-  fetch: Fetch<E>,
+export const fetch: <E>(
+  fetch: Fetch<E>
 ) => (
   url: string | URL,
-  init?: RequestInit | undefined,
-) => Promise<Either<E | HttpError, Response>> = core.raw;
+  init?: RequestInit | undefined
+) => Promise<Either<E | HttpError, Response>> = core.fetch;
 
 /**
  * @since 0.0.1
  * @category constructor
  */
-export const fetch: <E>(
-  fetch: Fetch<E>,
+export const fetch_: <E>(
+  fetch: Fetch<E>
 ) => (
   url: string | URL,
-  init?: RequestInit,
-) => Promise<HttpResponseEither<E | HttpError>> = core.fetch;
+  init?: RequestInit
+) => Promise<HttpResponseEither<E | HttpError>> = core.fetch_;

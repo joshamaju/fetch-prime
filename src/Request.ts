@@ -15,7 +15,7 @@ export {
 } from "./internal/request.js";
 
 /**
- * @since 0.0.1
+ * @since 0.3.0
  * @category model
  */
 export * as Body from "./Body.js";
@@ -46,7 +46,7 @@ export const blob: (arg: Request) => Promise<Either<DecodeError, Blob>> =
  * @category decoder
  */
 export const formData: (
-  arg: Request,
+  arg: Request
 ) => Promise<Either<DecodeError, FormData>> = core.formData;
 
 /**
@@ -54,5 +54,5 @@ export const formData: (
  * @category decoder
  */
 export const arrayBuffer: (
-  arg: Request,
+  arg: Request
 ) => Promise<Either<DecodeError, ArrayBuffer>> = core.arrayBuffer;

@@ -1,5 +1,5 @@
 /**
- * @since 0.0.1
+ * @since 0.3.0
  */
 import * as core from "./internal/body.js";
 
@@ -11,7 +11,7 @@ interface Base {
 }
 
 /**
- * @since 0.0.1
+ * @since 0.3.0
  * @category model
  */
 export interface Text extends Base {
@@ -20,7 +20,7 @@ export interface Text extends Base {
 }
 
 /**
- * @since 0.0.1
+ * @since 0.3.0
  * @category model
  */
 export interface Form extends Base {
@@ -29,13 +29,13 @@ export interface Form extends Base {
 }
 
 /**
- * @since 0.0.1
+ * @since 0.3.0
  * @category model
  */
 export interface Json extends Text {}
 
 /**
- * @since 0.0.1
+ * @since 0.3.0
  * @category model
  */
 export type Body = Text | Json | Form;
@@ -45,5 +45,5 @@ export const text: (input: string) => Text = core.text;
 export const json: (input: object) => Json = core.json;
 
 export const form: (
-  input: FormData | Record<string, string | Array<unknown>>,
+  input: FormData | Record<string, string | Array<unknown>>
 ) => Form = core.form;

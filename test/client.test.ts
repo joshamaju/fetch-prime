@@ -1,18 +1,18 @@
 import { describe, expect, test } from "vitest";
 
-import { pipe } from "fp-ts/function";
 import * as E from "fp-ts/Either";
+import { pipe } from "fp-ts/function";
 
-import { andThen } from "../src/Function.js";
 import adapter from "../src/Adapters/Platform.js";
+import { json } from "../src/Body.js";
 import * as Http from "../src/Client.js";
+import { HttpError } from "../src/Error.js";
+import { andThen } from "../src/Function.js";
 import * as Interceptor from "../src/Interceptor.js";
+import Config from "../src/Interceptors/Config.js";
 import { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
-import { json } from "../src/Body.js";
 import * as Response from "../src/Response.js";
-import { HttpError } from "../src/Error.js";
-import { HttpRequest } from "../src/Request.js";
 
 const base_url = "https://reqres.in/api";
 
@@ -22,17 +22,7 @@ const config = {
   headers: { "x-api-key": "reqres-free-v1" },
 };
 
-const headers_interceptor = async function (chain: Interceptor.Chain) {
-  const { url, init } = chain.request;
-
-  const req = new HttpRequest(url, {
-    ...init,
-    ...config,
-    headers: { ...init?.headers, ...config.headers },
-  });
-
-  return chain.proceed(req);
-};
+const headers_interceptor = Config(config);
 
 const interceptors = Interceptor.of(headers_interceptor);
 
@@ -132,7 +122,7 @@ test("should attach JSON body and headers with custom headers", async () => {
   const client = Http.create({ interceptors, adapter: adapter });
 
   const res = await client.post("/users", {
-    headers: { "X-API-Key-2": "Bearer <APIKEY>" },
+    headers: { "X-Custom-API-Key-2": "Bearer <APIKEY>" },
     body: json({ name: "morpheus", job: "leader" }),
   });
 
@@ -143,7 +133,7 @@ test("should attach JSON body and headers with custom headers", async () => {
     job: "leader",
   });
 
-  expect(headers?.get("X-API-Key-2")).toBe("Bearer <APIKEY>");
+  expect(headers?.get("X-Custom-API-Key-2")).toBe("Bearer <APIKEY>");
 });
 
 describe("timeout", () => {

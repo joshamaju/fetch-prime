@@ -31,7 +31,7 @@ export const andThen: {
 } = dual(2, (response, fn) => core.andThen(response, fn));
 
 /**
- * @since 0.0.1
+ * @since 0.3.0
  * @category combinator
  * @example fetch(url("https://reqres.in/api/users/{id}", { id: 2 }))
  */

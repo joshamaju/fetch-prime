@@ -5,7 +5,7 @@ import * as E from "fp-ts/Either";
 import Adapter from "../src/Adapters/Platform.js";
 import * as Http from "../src/index.js";
 import { andThen } from "../src/index.js";
-import { filterStatusOk, HttpResponse } from "../src/Response.js";
+import { filterStatusOk, HttpResponse, json } from "../src/Response.js";
 
 const base_url = "https://reqres.in/api";
 
@@ -17,13 +17,13 @@ const fetch = Http.fetch(Adapter);
 const fetch_ = Http.fetch_(Adapter);
 
 test("google", async () => {
-  const res = await fetch("https://www.google.com");
+  const res = await fetch_("https://www.google.com");
   const result = await res.ok((r) => r.text());
   expect((result as E.Right<string>).right).toContain("Google");
 });
 
 test("streaming", async () => {
-  const res = await fetch_("https://www.google.com");
+  const res = await fetch("https://www.google.com");
 
   let result = "";
 
@@ -39,7 +39,7 @@ test("streaming", async () => {
 });
 
 test("should make request", async () => {
-  const res = await fetch(base_url + "/users/2", config);
+  const res = await fetch_(base_url + "/users/2", config);
   const result = await res.ok((_) => _.json());
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -52,7 +52,7 @@ test("should be able to abort request", async () => {
     clearTimeout(timeout);
   }, 500);
 
-  const res = await fetch(base_url + "/users/2?delay=10", {
+  const res = await fetch_(base_url + "/users/2?delay=10", {
     ...config,
     signal: controller.signal,
   });
@@ -68,7 +68,7 @@ test("should be able to abort request", async () => {
 
 test("should partition response with status filter", async () => {
   const request = await fetch(base_url + "/users/2", config);
-  const ok = andThen(request.response, filterStatusOk);
-  const result = await andThen(ok, (r) => r.json());
+  const ok = andThen(request, filterStatusOk);
+  const result = await andThen(ok, json);
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
