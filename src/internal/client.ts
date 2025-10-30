@@ -1,34 +1,13 @@
-import {
-  chainW,
-  Either,
-  isLeft,
-  left,
-  map,
-  mapLeft,
-  right,
-} from "fp-ts/Either";
-import { pipe } from "fp-ts/function";
+import { chainW } from "fp-ts/Either";
 
-import { Config, DecodeType } from "../Client.js";
-import type {
-  Chain,
-  Interceptor,
-  Interceptors,
-  Merge,
-} from "../Interceptor.js";
+import { Config } from "../Client.js";
+import type { Interceptor, Interceptors, Merge } from "../Interceptor.js";
 import { add, copy, empty, make as makeInterceptor } from "../Interceptor.js";
 import { Body, isBody } from "./body.js";
-import {
-  blob,
-  filterStatusOk,
-  json,
-  ResponseEither,
-  text,
-} from "./response/index.js";
+import { filterStatusOk, ResponseEither } from "./response/index.js";
 
 import Timeout from "../Interceptors/Timeout.js";
 import BaseURL from "../Interceptors/Url.js";
-import { DecodeError, TaggedError } from "./error.js";
 import { HttpRequest } from "./request.js";
 
 type Method = NonNullable<RequestInit["method"]>;
@@ -140,18 +119,15 @@ export const create = <E, R>({
     init?: RequestInit | undefined
   ) => {
     const res = await adapter_(url, init);
-    return res;
-    // return chainW((_: Response) => filterStatusOk(_))(res);
+    return chainW((_: Response) => filterStatusOk(_))(res);
   };
-
-  type Init = RequestInit & { responseType?: DecodeType };
 
   const method = (method: Method) => {
     return async (
       url: string | URL | HttpRequest,
       init?:
-        | Init
-        | (Omit<Init, "body"> & { body?: Body | BodyInit })
+        | RequestInit
+        | (Omit<RequestInit, "body"> & { body?: Body | BodyInit })
         | Body
         | undefined
     ) => {

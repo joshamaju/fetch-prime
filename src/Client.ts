@@ -12,25 +12,6 @@ import { DecodeError, HttpError } from "./internal/error.js";
 import { HttpRequest } from "./internal/request.js";
 import { ResponseEither } from "./Response.js";
 
-export type DecodeType = "json" | "text" | "blob" | "unset" | "auto";
-
-export type Decoded = {
-  _tag: "Decode";
-  status: number;
-  headers: Headers;
-  statusText: string;
-};
-
-export type DecodeLeft = Decoded & {
-  _id: "Err";
-  error: DecodeError;
-};
-
-export type DecodeRight<A = any> = Decoded & {
-  _id: "Ok";
-  data: A;
-};
-
 /**
  * @since 0.2.0
  * @category model
@@ -39,51 +20,38 @@ export type Config<E, R> = {
   url?: string;
   adapter: Adapter;
   timeout?: number;
-  responseType?: DecodeType;
   interceptors?: Interceptors<E, R>;
 };
 
-type Unwrap<T, E> = T extends "text"
-  ? Either<Exclude<E, HttpError> | DecodeLeft, DecodeRight<string>>
-  : T extends "blob"
-  ? Either<Exclude<E, HttpError> | DecodeLeft, DecodeRight<Blob>>
-  : T extends "unset"
-  ? ResponseEither<E | StatusError>
-  : Either<Exclude<E, HttpError> | DecodeLeft, DecodeRight<any>>;
-
 /**
  * @since 0.2.0
  * @category model
  */
-export type Handler<E, C extends Config<any, any>> = <
-  I extends RequestInit & { responseType?: DecodeType }
->(
+export type Handler<E> = (
   url: string | URL | HttpRequest,
-  init?: I | (Omit<I, "body"> & { body?: Body | BodyInit }) | Body | undefined
-) => Promise<
-  I["responseType"] extends DecodeType
-    ? Unwrap<I["responseType"], E>
-    : C["responseType"] extends DecodeType
-    ? Unwrap<C["responseType"], E>
-    : ResponseEither<E | StatusError>
->;
+  init?:
+    | RequestInit
+    | (Omit<RequestInit, "body"> & { body?: Body | BodyInit })
+    | Body
+    | undefined
+) => Promise<ResponseEither<E | StatusError>>;
 
 /**
  * @since 0.2.0
  * @category model
  */
-export interface Instance<C extends Config<any, any>, E> {
+export interface Instance<E> {
   (url: string | URL | HttpRequest, init?: RequestInit | undefined): Promise<
     Either<E | StatusError, Response>
   >;
 
-  get: Handler<E, C>;
-  put: Handler<E, C>;
-  post: Handler<E, C>;
-  head: Handler<E, C>;
-  patch: Handler<E, C>;
-  delete: Handler<E, C>;
-  options: Handler<E, C>;
+  get: Handler<E>;
+  put: Handler<E>;
+  post: Handler<E>;
+  head: Handler<E>;
+  patch: Handler<E>;
+  delete: Handler<E>;
+  options: Handler<E>;
 }
 
 /**
@@ -91,15 +59,8 @@ export interface Instance<C extends Config<any, any>, E> {
  * @category constructor
  */
 export const create: {
-  <
-    E = HttpError,
-    R = never,
-    C extends Config<E, R> = Config<E, R> &
-      Omit<Config<E, R>, "timeout"> & { timeout: number }
-  >(
-    config: C
-  ): Instance<C, E | TimeoutError>;
-  <E = HttpError, R = never, C extends Config<E, R> = Config<E, R>>(
-    config: Config<E, R>
-  ): Instance<C, E>;
+  <E = HttpError, R = never>(
+    config: Config<E, R> & Omit<Config<E, R>, "timeout"> & { timeout: number }
+  ): Instance<E | TimeoutError>;
+  <E = HttpError, R = never>(config: Config<E, R>): Instance<E>;
 } = core.create as any;

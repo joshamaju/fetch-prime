@@ -33,7 +33,7 @@ test("should make client with http methods", async () => {
   const res = await client.get("/users/2");
   const json = await res.andThen((_) => _.json());
 
-  const result = json as Extract<typeof json, { _tag: "Right" }>;
+  const result = json as Extract<typeof result, { _tag: "Right" }>;
 
   expect(result.right.data.id).toBe(2);
 });
