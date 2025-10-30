@@ -5,7 +5,7 @@ import * as E from "fp-ts/Either";
 
 import { andThen } from "../src/Function.js";
 import PlatformAdapter from "../src/Adapters/Platform.js";
-import * as Http from "../src/Client.js";
+import { create } from "../src/Client.js";
 import * as Interceptor from "../src/Interceptor.js";
 import { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
@@ -20,33 +20,47 @@ const base_url_interceptor = BaseURL(base_url);
 test("should make client with http methods", async () => {
   const interceptors = Interceptor.of(base_url_interceptor);
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const client = create({ interceptors, adapter: PlatformAdapter });
 
-  const res = await Http.get("/users/2")(adapter);
-  const json = await andThen(res, Response.json);
+  const res = await client.get("/users/2");
+  const json = await res.andThen((_) => _.json());
 
   const result = json as Extract<typeof result, { _tag: "Right" }>;
 
   expect(result.right.data.id).toBe(2);
 });
 
+test("should be able to use client thunk and have access to raw result", async () => {
+  const interceptors = Interceptor.of(base_url_interceptor);
+
+  const client = create({ interceptors, adapter: PlatformAdapter });
+
+  const res = await client("/users/2");
+  const json = await andThen(res, Response.json);
+
+  const result = json as Extract<typeof result, { _tag: "Right" }>;
+
+  expect(E.isLeft(res) || E.isRight(res)).toBeTruthy();
+  expect(result.right.data.id).toBe(2);
+});
+
 test("should make client with base URL for every request", async () => {
-  const client = Http.create({ url: base_url, adapter: PlatformAdapter });
+  const client = create({ url: base_url, adapter: PlatformAdapter });
 
-  const res = await Http.get("/users/2")(client);
+  const res = await client.get("/users/2");
 
-  const result = await andThen(res, Response.json);
+  const result = await res.andThen((_) => _.json());
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
 
 test("should make client with interceptors", async () => {
   const interceptors = Interceptor.of(base_url_interceptor);
-  const client = Http.create({ interceptors, adapter: PlatformAdapter });
+  const client = create({ interceptors, adapter: PlatformAdapter });
 
-  const res = await Http.get("/users/2")(client);
+  const res = await client.get("/users/2");
 
-  const result = await andThen(res, Response.json);
+  const result = await res.andThen((_) => _.json());
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
 });
@@ -66,13 +80,13 @@ test("should attach JSON body and headers", async () => {
     Interceptor.add(spy)
   );
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const client = create({ interceptors, adapter: PlatformAdapter });
 
   const body_json = json({ name: "morpheus", job: "leader" });
 
-  const res = await Http.post("/users", body_json)(adapter);
+  const res = await client.post("/users", body_json);
 
-  const result = await andThen(res, Response.json);
+  const result = await res.andThen((_) => _.json());
 
   expect((result as E.Right<any>).right).toMatchObject({
     name: "morpheus",
@@ -97,14 +111,14 @@ test("should attach JSON body and headers with custom headers", async () => {
     Interceptor.add(spy)
   );
 
-  const adapter = Interceptor.make(interceptors)(PlatformAdapter);
+  const client = create({ interceptors, adapter: PlatformAdapter });
 
-  const res = await Http.post("/users", {
+  const res = await client.post("/users", {
     headers: { "X-API-Key": "Bearer <APIKEY>" },
     body: json({ name: "morpheus", job: "leader" }),
-  })(adapter);
+  });
 
-  const result = await andThen(res, Response.json);
+  const result = await res.andThen((_) => _.json());
 
   expect((result as E.Right<any>).right).toMatchObject({
     name: "morpheus",
@@ -114,17 +128,34 @@ test("should attach JSON body and headers with custom headers", async () => {
   expect(headers.get("X-API-Key")).toBe("Bearer <APIKEY>");
 });
 
-describe("timeout", () => {
-  const program = Http.get("/users/2?delay=10");
+test("should copy/inherit interceptors", async () => {
+  const explode = async () => E.left({ explosive: "boom" });
 
+  const interceptors = Interceptor.add(
+    Interceptor.empty(),
+    base_url_interceptor
+  );
+
+  const clone = Interceptor.add(Interceptor.copy(interceptors), explode);
+
+  const client = create({ interceptors: clone, adapter: PlatformAdapter });
+
+  const result = await client.get("/users/2");
+
+  expect(clone.length).not.toEqual(interceptors.length);
+  expect(result.response).toEqual(E.left({ explosive: "boom" }));
+});
+
+describe("timeout", () => {
   test("with number timeout", async () => {
-    const client = Http.create({
+    const client = create({
       timeout: 100,
       url: base_url,
       adapter: PlatformAdapter,
     });
 
-    const result = await program(client);
+    const response = await client.get("/users/2?delay=10");
+    const result = response.response;
 
     expect(E.isLeft(result)).toBeTruthy();
     expect((result as E.Left<any>).left).instanceOf(HttpError);
@@ -143,9 +174,9 @@ describe("method", () => {
 
     const interceptors = Interceptor.of(check);
 
-    const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
+    const client = create({ interceptors, adapter: PlatformAdapter });
 
-    await Http.post("/users/2")(interceptor);
+    await client.post("/users/2");
 
     expect(method).toBe("POST");
   });
@@ -159,8 +190,8 @@ describe("method", () => {
     };
 
     const interceptors = Interceptor.of(check);
-    const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
-    await Http.head("/users/2")(interceptor);
+    const client = create({ interceptors, adapter: PlatformAdapter });
+    await client.head("/users/2");
 
     expect(method).toBe("HEAD");
   });
