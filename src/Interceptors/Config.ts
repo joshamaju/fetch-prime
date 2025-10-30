@@ -1,3 +1,6 @@
+/**
+ * @since 0.3.0
+ */
 import { Chain } from "../Interceptor.js";
 import { HttpRequest } from "../Request.js";
 

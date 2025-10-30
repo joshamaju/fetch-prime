@@ -1,10 +1,15 @@
+/**
+ * @since 0.3.0
+ */
 import { Chain } from "../../Interceptor.js";
 import { HttpRequest } from "../../Request.js";
 
+/** @internal */
 export interface Config {
   params?: string[][] | Record<string, any> | string | URLSearchParams;
 }
 
+/** @internal */
 export function URLSearchParams(chain: Chain) {
   const req = chain.request;
   let url = req.url.toString();
