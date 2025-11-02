@@ -57,7 +57,7 @@ export {
    * @since 0.1.0
    * @category model
    */
-  ResponseEither,
+  HttpResponseEither,
 } from "./internal/response/index.js";
 
 /**

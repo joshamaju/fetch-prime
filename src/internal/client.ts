@@ -13,10 +13,10 @@ import ConfigInterceptor from "../Interceptors/Config.js";
 type Method = NonNullable<RequestInit["method"]>;
 
 const method = (method: Method): Handler => {
-  return (fetch) => {
+  return (adapter) => {
     return async (url, init) => {
       const init_ = init ? prepare(init) : undefined;
-      const res = await fetch(url, { ...init_, method });
+      const res = await adapter(url, { ...init_, method });
       return chain(filterStatusOk)(res);
     };
   };

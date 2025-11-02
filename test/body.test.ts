@@ -9,7 +9,7 @@ import * as Http from "../src/index.js";
 
 test("should attach JSON body and headers", async () => {
   let body;
-  let headers;
+  let headers: Headers | undefined;
 
   const spy = async (chain: Interceptor.Chain) => {
     body = chain.request.init?.body;
@@ -30,6 +30,6 @@ test("should attach JSON body and headers", async () => {
   const expected = '{"name":"morpheus","job":"leader"}';
 
   expect(body).toBe(expected);
-  expect(headers.get("Content-Type")).toBe("application/json");
-  expect(headers.get("Content-Length")).toBe(expected.length.toString());
+  expect(headers?.get("Content-Type")).toBe("application/json");
+  expect(headers?.get("Content-Length")).toBe(expected.length.toString());
 });

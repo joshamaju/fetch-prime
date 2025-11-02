@@ -1,7 +1,6 @@
-import { describe, expect, test } from "vitest";
+import { expect, test } from "vitest";
 
 import * as E from "fp-ts/Either";
-import { constNull, pipe } from "fp-ts/function";
 
 import Adapter from "../src/Adapters/Platform.js";
 import * as Http from "../src/index.js";

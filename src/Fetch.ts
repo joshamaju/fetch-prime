@@ -37,7 +37,7 @@ export type Fetch<E> = (
 ) => Promise<Either<E | HttpError, Response>>;
 
 /**
- * @since 0.1.0
+ * @since 0.0.1
  * @category constructor
  */
 export const fetch: <E>(

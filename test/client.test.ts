@@ -26,10 +26,10 @@ const headers_interceptor = Config(config);
 
 const interceptors = Interceptor.of(headers_interceptor);
 
-const client = Http.create({ adapter, interceptors, url: base_url });
+// const client = Http.create({ adapter, interceptors, url: base_url });
 
 test("should make client with http methods", async () => {
-  const interceptors = Interceptor.of(headers_interceptor);
+  // const interceptors = Interceptor.of(headers_interceptor);
 
   const client = Http.create({ adapter, interceptors, url: base_url });
 
@@ -69,7 +69,7 @@ test("should make client with base URL for every request", async () => {
 });
 
 test("should make client with interceptors", async () => {
-  const interceptors = Interceptor.of(headers_interceptor);
+  // const interceptors = Interceptor.of(headers_interceptor);
 
   const client = Http.create({
     interceptors,

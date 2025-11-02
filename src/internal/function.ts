@@ -1,5 +1,4 @@
-import { isLeft, Either } from "fp-ts/Either";
-import { HttpResponse } from "./response/index.js";
+import { Either, isLeft } from "fp-ts/Either";
 
 export const andThen = <E, A, E1, B>(
   response: Either<E, A>,

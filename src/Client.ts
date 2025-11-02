@@ -7,10 +7,9 @@ import { Either } from "fp-ts/Either";
 import { StatusError } from "./Error.js";
 import { Adapter, Fetch, Init } from "./Fetch.js";
 import { InterceptorError, Interceptors } from "./Interceptor.js";
+import { TimeoutError } from "./Interceptors/Timeout.js";
 import * as core from "./internal/client.js";
 import { HttpError } from "./internal/error.js";
-import { HttpRequest } from "./internal/request.js";
-import { TimeoutError } from "./Interceptors/Timeout.js";
 
 /** @internal */
 export type Config<E, R> = {
@@ -25,7 +24,7 @@ export type Config<E, R> = {
 export type Handler<E = any> = (
   fetch: Fetch<any>
 ) => (
-  url: string | URL | HttpRequest,
+  url: string | URL,
   init?: Init | undefined
 ) => Promise<Either<E | StatusError, Response>>;
 
