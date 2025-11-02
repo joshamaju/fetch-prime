@@ -36,8 +36,12 @@ const delete_ = method("DELETE");
 
 const options = method("OPTIONS");
 
-type MaybeMerge<I extends Interceptors<any, any>, T> =
-  T extends Interceptor<any, any> ? Merge<I, T> : I;
+type MaybeMerge<I extends Interceptors<any, any>, T> = T extends Interceptor<
+  any,
+  any
+>
+  ? Merge<I, T>
+  : I;
 
 export const create = <E, R>({
   url,

@@ -35,3 +35,10 @@ export {
    */
   default as Timeout,
 } from "./Timeout.js";
+
+export {
+  /**
+   * @since 0.3.0
+   */
+  default as URLSearchParams,
+} from "./URLSearchParams/index.js";

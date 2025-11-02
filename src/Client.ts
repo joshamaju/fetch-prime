@@ -23,10 +23,10 @@ export type Config<E, R> = {
 
 /** @internal */
 export type Handler<E = any> = (
-  fetch: Fetch<any>,
+  fetch: Fetch<any>
 ) => (
   url: string | URL | HttpRequest,
-  init?: Init | undefined,
+  init?: Init | undefined
 ) => Promise<Either<E | StatusError, Response>>;
 
 /**
@@ -48,11 +48,11 @@ export const create: {
   <E = never, R = never>(
     config: Config<E, R> &
       Omit<Config<E, R>, "url" | "headers"> &
-      ({ url: string } | { headers: RequestInit["headers"] }),
+      ({ url: string } | { headers: RequestInit["headers"] })
   ): Client<E | HttpError | InterceptorError>;
 
   <E = never, R = never>(
-    config: Config<E, R> & Omit<Config<E, R>, "timeout"> & { timeout: number },
+    config: Config<E, R> & Omit<Config<E, R>, "timeout"> & { timeout: number }
   ): Client<E | HttpError | TimeoutError | InterceptorError>;
 
   <E = never, R = never>(config: Config<E, R>): Client<E | HttpError>;

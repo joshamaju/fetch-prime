@@ -1,17 +1,15 @@
 import {
-  map,
-  left,
-  right,
   bimap,
-  chainW,
-  isLeft,
-  tryCatch,
   Either,
+  isLeft,
+  left,
+  map,
+  right,
+  tryCatch,
 } from "fp-ts/Either";
 
 import { decode } from "../utils.js";
 import { StatusCode, StatusNotOK, StatusOK } from "./types.js";
-import { andThen } from "../function.js";
 
 export class StatusError {
   readonly _tag = "StatusError";
@@ -133,15 +131,38 @@ export class HttpResponse {
   }
 }
 
-export class HttpResponseEither<E> {
-  constructor(readonly response: Either<E, HttpResponse>) {}
+export class ResponseEither<E> {
+  constructor(private res: Either<E, Response>) {}
 
-  private map<A>(fn: (r: HttpResponse) => A) {
+  get response() {
+    return map((_: Response) => new HttpResponse(_))(this.res);
+  }
+
+  get() {
+    if (isLeft(this.res)) throw this.res.left;
+    return this.res.right;
+  }
+
+  getOrNull() {
+    if (isLeft(this.res)) return null;
+    return this.res.right;
+  }
+
+  map<A>(fn: (r: HttpResponse) => A) {
     return map((r: HttpResponse) => fn(r))(this.response);
   }
 
-  private chain<E1, A>(fn: (r: HttpResponse) => Either<E | E1, A>) {
-    return chainW((r: HttpResponse) => fn(r))(this.response);
+  andThen<E1, B>(
+    fn: (self: HttpResponse) => Promise<Either<E1, B>>
+  ): Promise<Either<E | E1, B>>;
+  andThen<E1, B>(fn: (self: HttpResponse) => Either<E1, B>): Either<E | E1, B>;
+  andThen<B>(fn: (self: HttpResponse) => B): Either<E, B>;
+  andThen<E1, B>(
+    fn: (self: HttpResponse) => Promise<Either<E1, B>> | Either<E1, B> | B
+  ) {
+    const res = this.response;
+    if (isLeft(res)) return res;
+    return fn(res.right);
   }
 
   async ok<E1, A>(
@@ -185,26 +206,26 @@ export class HttpResponseEither<E> {
   }
 
   clone() {
-    return this.chain((_) => _.clone());
+    return this.andThen((_) => _.clone());
   }
 
   arrayBuffer() {
-    return andThen(this.response, (_) => arrayBuffer(_.response));
+    return this.andThen((_) => _.arrayBuffer());
   }
 
   blob() {
-    return andThen(this.response, (_) => blob(_.response));
+    return this.andThen((_) => _.blob());
   }
 
   formData() {
-    return andThen(this.response, (_) => formData(_.response));
+    return this.andThen((_) => _.formData());
   }
 
   json() {
-    return andThen(this.response, (_) => json(_.response));
+    return this.andThen((_) => _.json());
   }
 
   text() {
-    return andThen(this.response, (_) => text(_.response));
+    return this.andThen((_) => _.text());
   }
 }

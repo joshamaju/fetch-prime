@@ -1,3 +1,6 @@
+/**
+ * @since 0.3.0
+ */
 import { Chain } from "../Interceptor.js";
 import { HttpRequest } from "../Request.js";
 
@@ -16,7 +19,7 @@ const Config = (config: RequestInit) => {
 };
 
 /**
- * @since 0.0.1
+ * @since 0.3.0
  * @category interceptor
  */
 export default Config;

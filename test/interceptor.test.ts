@@ -6,14 +6,19 @@ import { pipe } from "fp-ts/function";
 
 import PlatformAdapter from "../src/Adapters/Platform.js";
 import { HttpError, StatusError } from "../src/Error.js";
-import * as Http from "../src/index.js";
+import { andThen, fetch as fetch_ } from "../src/index.js";
 import * as Interceptor from "../src/Interceptor.js";
 import { InterceptorError } from "../src/Interceptor.js";
 import * as Result from "../src/Response.js";
+import * as Http from "../src/index.js";
 
 import Timeout, { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
 import { StatusOK } from "../src/Interceptors/StatusFilter.js";
+import URLSearchParams, {
+  Config as URLSearchParamsConfig,
+} from "../src/Interceptors/URLSearchParams.js";
+import Config from "../src/Interceptors/Config.js";
 
 const adapter = PlatformAdapter;
 
@@ -21,9 +26,9 @@ const base_url = "https://reqres.in/api";
 
 const base_url_interceptor = BaseURL(base_url);
 
-const config = {
+const headers_interceptor = Config({
   headers: { "x-api-key": "reqres-free-v1" },
-};
+});
 
 class Err {
   readonly _tag = "Err";
@@ -65,7 +70,9 @@ test("should call interceptors in provided order", async () => {
 
   let interceptor = Interceptor.make(interceptors_asc)(PlatformAdapter);
 
-  await Http.fetch(interceptor)("/users/2", config);
+  const fetch = fetch_(interceptor);
+
+  await fetch(base_url + "/users/2");
 
   expect(order).toStrictEqual([1, 2, 3, 3, 2, 1]);
 
@@ -80,7 +87,7 @@ test("should call interceptors in provided order", async () => {
 
   const interceptor_desc = Interceptor.make(interceptors_desc)(PlatformAdapter);
 
-  await Http.fetch(interceptor_desc)("/users/2", config);
+  await fetch_(interceptor_desc)(base_url + "/users/2");
 
   expect(order).toStrictEqual([3, 2, 1, 1, 2, 3]);
 });
@@ -88,7 +95,7 @@ test("should call interceptors in provided order", async () => {
 test("every interceptor should receive the result of the next interceptor", async () => {
   const first = async function (chain: Interceptor.Chain) {
     const res = await chain.proceed(chain.request);
-    const text = await Http.andThen(res, Result.text);
+    const text = await andThen(res, Result.text);
     return E.map((t: string) => new Response((parseFloat(t) + 2).toString()))(
       text
     );
@@ -96,7 +103,7 @@ test("every interceptor should receive the result of the next interceptor", asyn
 
   const second = async function (chain: Interceptor.Chain) {
     const res = await chain.proceed(chain.request);
-    const text = await Http.andThen(res, Result.text);
+    const text = await andThen(res, Result.text);
     return E.map((t: string) => new Response((parseFloat(t) + 1).toString()))(
       text
     );
@@ -108,12 +115,13 @@ test("every interceptor should receive the result of the next interceptor", asyn
     Interceptor.empty(),
     Interceptor.add(first),
     Interceptor.add(second),
-    Interceptor.add(third)
+    Interceptor.add(third),
+    Interceptor.add(headers_interceptor)
   );
 
   const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch_(interceptor)("/users/2", config);
+  const res = await Http.fetch_(interceptor)(base_url + "/users/2");
 
   const result = await res.ok((_) => _.text());
 
@@ -133,23 +141,28 @@ test("should return early without calling the next interceptor", async () => {
   const interceptors = pipe(
     Interceptor.empty(),
     Interceptor.add(early),
-    Interceptor.add(mutate)
+    Interceptor.add(mutate),
+    Interceptor.add(headers_interceptor)
   );
 
   const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch_(interceptor)("/users/2", config);
-  const result = await Http.andThen(res.response, (_) => _.text());
+  const res = await Http.fetch_(interceptor)(base_url + "/users/2");
+  const result = await andThen(res.response, (_) => _.text());
 
   expect((result as E.Right<any>).right).toBe("10");
   expect(variable).toBe(1);
 });
 
 test("should create handler with single interceptor", async () => {
-  const interceptors = Interceptor.of(base_url_interceptor);
+  const interceptors = pipe(
+    Interceptor.of(base_url_interceptor),
+    Interceptor.add(headers_interceptor)
+  );
+
   const interceptor = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch_(interceptor)("/users/2", config);
+  const res = await Http.fetch_(interceptor)("/users/2");
   const result = await res.ok((_) => _.json());
 
   expect((result as E.Right<any>).right.data.id).toBe(2);
@@ -164,9 +177,11 @@ test("should create handler with early error interceptor", async () => {
 
   const newAdapter = Interceptor.make(interceptors)(adapter);
 
-  const res = await Http.fetch_(newAdapter)("/users/2", config);
+  const res = await Http.fetch_(newAdapter)("/users/2");
 
   const result = await res.ok((_) => _.json());
+
+  // const a = await res.flatMap((_) => _.text());
 
   expect(E.isLeft(result)).toBeTruthy();
 
@@ -187,7 +202,7 @@ test("should create handler with early success response", async () => {
 
   const adapter = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const res = await Http.fetch_(adapter)("/users/2", config);
+  const res = await Http.fetch_(adapter)("/users/2");
   const result = await res.ok((_) => _.json());
 
   expect((result as E.Right<any>).right.data.id).not.toBe(2);
@@ -206,10 +221,10 @@ test("should copy/inherit interceptors", async () => {
 
   const adapter = Interceptor.make(clone)(PlatformAdapter);
 
-  const result = await Http.fetch(adapter)("/users/2");
+  const result = await Http.fetch_(adapter)("/users/2");
 
   expect(clone.length).not.toEqual(interceptors.length);
-  expect(result).toEqual(E.left({ explosive: "boom" }));
+  expect(result.response).toEqual(E.left({ explosive: "boom" }));
 });
 
 test("should attach url to every outgoing request", async () => {
@@ -223,7 +238,8 @@ test("should attach url to every outgoing request", async () => {
   const interceptors = pipe(
     Interceptor.empty(),
     Interceptor.add(base_url_interceptor),
-    Interceptor.add(spy)
+    Interceptor.add(spy),
+    Interceptor.add(headers_interceptor)
   );
 
   const adapter = Interceptor.make(interceptors)(PlatformAdapter);
@@ -274,11 +290,12 @@ test("request timeout interceptor", async () => {
 
   const adapter = Interceptor.make(interceptors)(PlatformAdapter);
 
-  const result = await Http.fetch(adapter)("/users/2?delay=10");
+  const result = await Http.fetch_(adapter)("/users/2?delay=10");
+  const res = result.response;
 
-  const err = (result as Extract<typeof result, { _tag: "Left" }>).left;
+  const err = (res as Extract<typeof res, { _tag: "Left" }>).left;
 
-  expect(E.isLeft(result)).toBeTruthy();
+  expect(E.isLeft(res)).toBeTruthy();
   expect(err).instanceOf(HttpError);
   expect((err as Extract<typeof err, HttpError>).cause).instanceOf(
     TimeoutError
@@ -350,13 +367,14 @@ describe("Interceptors", () => {
     const interceptors = pipe(
       Interceptor.empty(),
       Interceptor.add(base_url_interceptor),
+      Interceptor.add(headers_interceptor),
       Interceptor.add(StatusOK)
     );
 
     test("should partition to ok response", async () => {
       const newAdapter = Interceptor.make(interceptors)(adapter);
 
-      const res = await Http.fetch_(newAdapter)("/users/2", config);
+      const res = await Http.fetch_(newAdapter)("/users/2");
       const result = await res.json();
 
       expect(result._tag).toBe("Right");
@@ -373,4 +391,42 @@ describe("Interceptors", () => {
       expect((result as E.Left<any>).left).toBeInstanceOf(StatusError);
     });
   });
+
+  describe("URLSearchParams", () => {
+    const interceptors = pipe(
+      Interceptor.empty(),
+      Interceptor.add(base_url_interceptor),
+      Interceptor.add(headers_interceptor),
+      Interceptor.add(URLSearchParams)
+    );
+
+    test("should attach request parameters to request url", async () => {
+      let url: string;
+
+      const spy = async function (chain: Interceptor.Chain) {
+        url = chain.request.url.toString();
+        const res = await chain.proceed(chain.request);
+        return res;
+      };
+
+      const newAdapter = Interceptor.make(
+        Interceptor.add(Interceptor.copy(interceptors), spy)
+      )(adapter);
+
+      const res = await Http.fetch_(newAdapter)("/users", {
+        params: { page: 2 },
+      });
+
+      const result = await res.json();
+
+      expect(url!).toBe("https://reqres.in/api/users?page=2");
+      expect((result as E.Right<any>).right.page).toBe(2);
+    });
+  });
 });
+
+type Init_ = RequestInit & URLSearchParamsConfig;
+
+declare module "../src/Fetch.js" {
+  interface RequestInit extends Init_ {}
+}
