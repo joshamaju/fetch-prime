@@ -3,7 +3,7 @@
  */
 import { left, right } from "fp-ts/Either";
 
-import { Adapter } from "../Fetch.js";
+import type { Adapter } from "../Fetch.js";
 import { HttpError } from "../internal/error.js";
 import { HttpRequest } from "../internal/request.js";
 
@@ -23,4 +23,4 @@ const fetch_: Adapter = async (url, init) => {
  * @since 0.0.1
  * @category adapter
  */
-export default fetch_
+export default fetch_;

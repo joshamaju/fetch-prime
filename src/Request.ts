@@ -15,6 +15,12 @@ export {
 } from "./internal/request.js";
 
 /**
+ * @since 0.3.0
+ * @category model
+ */
+export * as Body from "./Body.js";
+
+/**
  * @since 0.0.1
  * @category decoder
  */

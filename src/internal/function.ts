@@ -1,13 +1,16 @@
-import { isLeft, Either } from "fp-ts/Either";
-import { HttpResponse } from "./response/index.js";
+import { Either, isLeft } from "fp-ts/Either";
 
-export const andThen: <E, A, E1>(
-  response: Either<E, HttpResponse>,
-  fn: (self: HttpResponse) => A | Either<E1, A> | Promise<Either<E1, A>>
-) =>
-  | A
-  | Either<E | E1 | HttpResponse, A>
-  | Promise<Either<E | E1 | HttpResponse, A>> = (res, fn) => {
-  if (isLeft(res)) return res;
-  return fn(res.right);
+export const andThen = <E, A, E1, B>(
+  response: Either<E, A>,
+  fn: (res: A) => Either<E1, B> | Promise<Either<E1, B>>
+): Either<E | E1, B> | Promise<Either<E | E1, B>> => {
+  if (isLeft(response)) return response;
+  return fn(response.right);
+};
+
+export const url = (template: string, variables: object) => {
+  return Object.entries(variables).reduce(
+    (url, [key, value]) => url.replaceAll(`{${key}}`, String(value)),
+    template
+  );
 };

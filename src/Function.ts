@@ -30,3 +30,21 @@ export const andThen: {
   <A, B>(fn: (self: A) => B): <E>(response: Either<E, A>) => Either<E, B>;
   <E, A, B>(response: Either<E, A>, fn: (self: A) => B): Either<E, B>;
 } = dual(2, (response, fn) => core.andThen(response, fn));
+
+/**
+ * **Example**
+ *
+ * ```ts
+ * import * as Http from "fetch-prime/Fetch";
+ * import { url } from "fetch-prime/Function";
+ * import adapter from "fetch-prime/Adapters/Platform";
+ *
+ * const fetch = Http.fetch(adapter);
+ *
+ * fetch(url("https://reqres.in/api/users/{id}", { id: 2 }))
+ * ```
+ *
+ * @since 0.3.0
+ * @category combinator
+ */
+export const url: (template: string, variables: object) => string = core.url;

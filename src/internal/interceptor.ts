@@ -11,12 +11,18 @@ export class InterceptorError {
   constructor(
     readonly name: string,
     readonly index: number,
-    readonly cause: unknown
-  ) {}
+    readonly cause: unknown,
+  ) {
+    // super(message, options);
+    //     if ("captureStackTrace" in Error) {
+    //       // Avoid MyError itself in the stack trace
+    //       Error.captureStackTrace(this, MyError);
+    //     }
+  }
 }
 
 export function compose(
-  initiator: Reader<Chain, Promise<Either<any, Response>>>
+  initiator: Reader<Chain, Promise<Either<any, Response>>>,
 ) {
   return <E, R>(interceptors: Interceptors<E, R>) =>
     (request: HttpRequest) => {
@@ -24,7 +30,7 @@ export function compose(
 
       function dispatch(
         i: number,
-        request: HttpRequest
+        request: HttpRequest,
       ): Promise<Either<E | HttpError | InterceptorError, Response>> {
         if (i <= index) {
           throw new Error("proceed() called multiple times");
@@ -45,7 +51,7 @@ export function compose(
         };
 
         return handler(chain).catch((e) =>
-          left((new InterceptorError(handler.name, i, e)))
+          left(new InterceptorError(handler.name, i, e)),
         );
       }
 
@@ -63,14 +69,14 @@ export const make = <E, R>(interceptors: Interceptors<E, R>) => {
 };
 
 export const of = <E, R>(
-  interceptor: Interceptor<E, R>
+  interceptor: Interceptor<E, R>,
 ): Interceptors<E, R> => [interceptor];
 
 export const empty = (): Interceptors<never, never> => [];
 
 export const add = <T extends Interceptor<any, any>, E, R>(
   interceptors: Interceptors<E, R>,
-  interceptor: T
+  interceptor: T,
 ) => {
   return [...interceptors, interceptor];
 };

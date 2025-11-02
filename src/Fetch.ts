@@ -6,13 +6,17 @@ import type { Either } from "fp-ts/Either";
 import { HttpError } from "./internal/error.js";
 import * as core from "./internal/fetch.js";
 import { HttpRequest } from "./internal/request.js";
-import { ResponseEither } from "./internal/response/index.js";
+import { HttpResponseEither } from "./internal/response/index.js";
+import { Body } from "./Body.js";
 
 /**
- * @since 0.2.0
+ * @since 0.0.1
  * @category model
  */
-export interface RequestInit extends globalThis.RequestInit {}
+export type Init =
+  | RequestInit
+  | (Omit<RequestInit, "body"> & { body?: Body | BodyInit })
+  | Body;
 
 /**
  * @since 0.0.1
@@ -33,12 +37,23 @@ export type Fetch<E> = (
 ) => Promise<Either<E | HttpError, Response>>;
 
 /**
- * @since 0.1.0
+ * @since 0.0.1
  * @category constructor
  */
 export const fetch: <E>(
   fetch: Fetch<E>
 ) => (
   url: string | URL,
+  init?: RequestInit | undefined
+) => Promise<Either<E | HttpError, Response>> = core.fetch;
+
+/**
+ * @since 0.0.1
+ * @category constructor
+ */
+export const fetch_: <E>(
+  fetch: Fetch<E>
+) => (
+  url: string | URL,
   init?: RequestInit
-) => Promise<ResponseEither<E | HttpError>> = core.fetch;
+) => Promise<HttpResponseEither<E | HttpError>> = core.fetch_;

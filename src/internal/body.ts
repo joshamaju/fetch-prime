@@ -1,22 +1,5 @@
-interface Base {
-  readonly _id: string;
-  readonly _tag: string;
-  readonly headers?: Record<string, string>;
-}
-
-export interface Text extends Base {
-  readonly _id: "Text";
-  readonly value: string;
-}
-
-export interface Form extends Base {
-  readonly _id: "Form";
-  readonly value: FormData;
-}
-
-export interface Json extends Text {}
-
-export type Body = Text | Json | Form;
+import { Body, Form, Json, Text } from "../Body.js";
+import { Init } from "../Fetch.js";
 
 export function isBody(input: unknown): input is Body {
   return (
@@ -55,7 +38,7 @@ export function json(input: object): Json {
 }
 
 export function form(
-  input: FormData | Record<string, string | Array<unknown>>
+  input: FormData | Record<string, string | Array<unknown>>,
 ): Form {
   const formData = new FormData();
 
@@ -77,8 +60,48 @@ export function form(
     _id: "Form",
     _tag: "Body",
     value: formData,
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    // headers: {
+    //   "Content-Type": "application/x-www-form-urlencoded",
+    // },
   };
+}
+
+export function prepare(init: Init) {
+  let rest: RequestInit = {};
+  let body: RequestInit["body"];
+  let headers: RequestInit["headers"];
+
+  if (isBody(init)) {
+    body = init.value;
+    headers = init.headers;
+  } else {
+    let { body: local_body, headers: local_headers, ..._ } = init ?? {};
+
+    if (local_body && isBody(local_body)) {
+      const body = local_body;
+
+      if (local_headers) {
+        const headers = {
+          ...Object.fromEntries(Object.entries(local_headers)),
+        };
+
+        for (const key in body.headers) {
+          headers[key] = body.headers[key];
+        }
+
+        local_headers = headers;
+      } else {
+        local_headers = body.headers;
+      }
+
+      local_body = body.value;
+    }
+
+    rest = _;
+
+    body = local_body;
+    headers = local_headers;
+  }
+
+  return { ...rest, body, headers };
 }

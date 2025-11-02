@@ -41,4 +41,4 @@ export {
    * @since 0.3.0
    */
   default as URLSearchParams,
-} from "./URLSearchParams/index.js";
+} from "./URLSearchParams.js";
