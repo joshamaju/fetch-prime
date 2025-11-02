@@ -40,10 +40,22 @@ export interface Json extends Text {}
  */
 export type Body = Text | Json | Form;
 
+/**
+ * @since 0.3.0
+ * @category encoder
+ */
 export const text: (input: string) => Text = core.text;
 
+/**
+ * @since 0.3.0
+ * @category encoder
+ */
 export const json: (input: object) => Json = core.json;
 
+/**
+ * @since 0.3.0
+ * @category encoder
+ */
 export const form: (
   input: FormData | Record<string, string | Array<unknown>>
 ) => Form = core.form;

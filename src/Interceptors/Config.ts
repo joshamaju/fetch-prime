@@ -7,13 +7,8 @@ import { HttpRequest } from "../Request.js";
 const Config = (config: RequestInit) => {
   return function (chain: Chain) {
     const { url, init } = chain.request;
-
-    const req = new HttpRequest(url, {
-      ...init,
-      ...config,
-      headers: { ...init?.headers, ...config.headers },
-    });
-
+    const headers = { ...init?.headers, ...config.headers };
+    const req = new HttpRequest(url, { ...init, ...config, headers });
     return chain.proceed(req);
   };
 };
