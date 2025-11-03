@@ -1,5 +1,15 @@
 # fetch-prime
 
+## 0.3.0
+
+### Minor Changes
+
+- a29eaf8: Drop thrunk API, prefer factory function for adapters
+
+### Patch Changes
+
+- 5d3f1ce: Streamline adapter arguments interface
+
 ## 0.2.0
 
 ### Minor Changes
