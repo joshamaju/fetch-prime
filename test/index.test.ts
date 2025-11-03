@@ -1,11 +1,18 @@
-import { expect, test } from "vitest";
+import { expect, test, describe } from "vitest";
 
 import * as E from "fp-ts/Either";
 
 import Adapter from "../src/Adapters/Platform.js";
 import * as Http from "../src/index.js";
 import { andThen } from "../src/index.js";
-import { filterStatusOk, HttpResponse, json } from "../src/Response.js";
+import * as Interceptor from "../src/Interceptor.js";
+import {
+  json,
+  text,
+  formData,
+  HttpResponse,
+  filterStatusOk,
+} from "../src/Response.js";
 
 const base_url = "https://reqres.in/api";
 
@@ -71,4 +78,37 @@ test("should partition response with status filter", async () => {
   const ok = andThen(request, filterStatusOk);
   const result = await andThen(ok, json);
   expect((result as E.Right<any>).right.data.id).toBe(2);
+});
+
+describe("decoders", () => {
+  test("should decode json response", async () => {
+    const res = await fetch(base_url + "/users/2", config);
+    const result = await andThen(res, json);
+    expect((result as E.Right<any>).right.data.id).toBe(2);
+  });
+
+  test("should decode text response", async () => {
+    const early = async () => E.right(new Response("10"));
+    const interceptor = Interceptor.make(Interceptor.of(early));
+    const fetch = Http.fetch(interceptor(Adapter));
+    const res = await fetch(base_url + "/users/2", config);
+    const result = await andThen(res, text);
+    expect((result as E.Right<any>).right).toBe("10");
+  });
+
+  test("should decode formdata response", async () => {
+    const early = async () => {
+      const form = new FormData();
+      form.set("key", "value");
+      return E.right(new Response(form));
+    };
+
+    const interceptor = Interceptor.make(Interceptor.of(early));
+    const fetch = Http.fetch(interceptor(Adapter));
+    const res = await fetch(base_url + "/users/2", config);
+    const result = await andThen(res, formData);
+    const form = (result as Extract<typeof result, E.Right<any>>).right;
+    expect(form).toBeInstanceOf(FormData);
+    expect(form.get("key")).toBe("value");
+  });
 });

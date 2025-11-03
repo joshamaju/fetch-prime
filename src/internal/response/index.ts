@@ -189,22 +189,22 @@ export class HttpResponseEither<E> {
   }
 
   arrayBuffer() {
-    return andThen(this.response, (_) => arrayBuffer(_.response));
+    return andThen(this.response, (_) => _.arrayBuffer());
   }
 
   blob() {
-    return andThen(this.response, (_) => blob(_.response));
+    return andThen(this.response, (_) => _.blob());
   }
 
   formData() {
-    return andThen(this.response, (_) => formData(_.response));
+    return andThen(this.response, (_) => _.formData());
   }
 
   json() {
-    return andThen(this.response, (_) => json(_.response));
+    return andThen(this.response, (_) => _.json());
   }
 
   text() {
-    return andThen(this.response, (_) => text(_.response));
+    return andThen(this.response, (_) => _.text());
   }
 }

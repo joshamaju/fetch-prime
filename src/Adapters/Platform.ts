@@ -5,14 +5,10 @@ import { left, right } from "fp-ts/Either";
 
 import type { Adapter } from "../Fetch.js";
 import { HttpError } from "../internal/error.js";
-import { HttpRequest } from "../internal/request.js";
 
 const fetch_: Adapter = async (url, init) => {
   try {
-    const res = await (url instanceof HttpRequest
-      ? fetch(url.url, url.init)
-      : fetch(url, init));
-
+    const res = await fetch(url, init);
     return right(res);
   } catch (error) {
     return left(new HttpError(error));
