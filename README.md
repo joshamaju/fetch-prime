@@ -1,6 +1,6 @@
 # Fetch Prime
 
-`fetch` but with super-powers
+> `fetch` with super-powers
 
 - 🔗 Interceptors
 - 🔐 Fully typed errors
@@ -20,26 +20,28 @@ npm install fetch-prime fp-ts
 
 ```ts
 import * as E from "fp-ts/Either";
-import { fetch } from "fetch-prime/Fetch";
+import * as Http from "fetch-prime/Fetch";
 import adapter from "fetch-prime/Adapters/Platform";
 
-const res = await fetch(adapter)("/users");
+const fetch = Http.fetch(adapter);
 
-if (E.isRight(res.response) && res.response.right.ok) {
+const res = await fetch("/users");
+
+if (E.isRight(res.right) && res.right.ok) {
   const users = await response.right.json();
 }
 
 // or
-import { fetch } from "fetch-prime/Fetch";
 import { andThen } from "fetch-prime/Function";
-import {filterStatusOk} from "fetch-prime/Response";
+import { filterStatusOk } from "fetch-prime/Response";
 
-const res = await fetch(adapter)("/users");
-const ok = andThen(res.response, filterStatusOk);
+const res = await fetch("/users");
+const ok = andThen(res, filterStatusOk);
 const users = await andThen(ok, (res) => res.json());
 
 // or
-const response = await fetch(adapter)("/users");
+const fetch = Http.fetch_(adapter);
+const response = await fetch("/users");
 const users = await response.ok((res) => res.json());
 ```
 
@@ -55,22 +57,39 @@ const baseURL = "https://reqres.in/api";
 const interceptors = Interceptor.of(BaseURL(baseURL));
 // or
 const interceptors = Interceptor.add(Interceptor.empty(), BaseURL(baseURL));
+// or using pipeline
+import { pipe } from "fp-ts/function";
 
-// make function that executes our interceptors
+const interceptors = pipe(
+  Interceptor.empty(),
+  Interceptor.add(BaseURL(baseURL))
+);
+
+// make the function that executes our interceptors
 const interceptor = Interceptor.make(interceptors);
 
-// we finally make the HTTP adapter
-const intercept = interceptor(adapter);
+// finally, make the HTTP adapter
+const fetch = Http.fetch(interceptor(adapter));
 
-const response = await fetch(intercept)("/users");
+const response = await fetch("/users");
 ```
 
 ## Adapters
 
-`fetch-prime` provides a default adapter that uses the platform fetch.
+`fetch-prime` provides the following adapters:
+
+- Platform fetch
+- Axios adapter
+
+### Example
 
 ```ts
-import FetchAdapter from "fetch-prime/Adapters/Platform";
+import * as Http from "fetch-prime/Fetch";
+import adapter from "fetch-prime/Adapters/Axios";
+
+const fetch = Http.fetch(adapter);
+
+const res = await fetch("/users");
 ```
 
 > You can write your own adapter i.e using XMLHttpRequest
@@ -85,27 +104,47 @@ import FetchAdapter from "fetch-prime/Adapters/Platform";
 - Status Filter
 - Bearer and Basic authentication
 - URLSearchParams
+- Config
+
+## Misc
+
+`fetch-prime` provides a wrapper, `HttpResponseEither` that provides methods to easily manipulate the `Response` success channel.
 
 ### Example
 
-Instead of checking if the response is ok i.e 200
+Instead of doing
 
 ```ts
-const response = await fetch(adapter)("/users");
-const users = await response.ok(res => res.json());
+const response = await fetch("/users");
+
+if (E.isRight(response) && response.right.ok) {
+  const users = await response.right.json();
+}
 ```
 
-We can delegate that to a response interceptor that performs that check.
+to check if the response is ok i.e 200. Do
+
+```ts
+import * as Http from "fetch-prime/Fetch";
+import adapter from "fetch-prime/Adapters/Platform";
+
+const fetch = Http.fetch_(adapter);
+
+const response = await fetch("/users");
+const users = await response.ok((res) => res.json());
+```
+
+It can also be delegated to a response interceptor that performs the check.
 
 ```ts
 const interceptors = Interceptor.of(StatusOK);
 
 const interceptor = Interceptor.make(interceptors);
 
-const adapter = interceptor(Adapter);
+const fetch = Http.fetch(interceptor(adapter));
 
-const response = await fetch(adapter)("/users");
-const users = await response.json();
+const response = await fetch("/users");
+const users = await andThen(response, (res) => res.json());
 // ...
 ```
 
