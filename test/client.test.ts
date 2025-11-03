@@ -28,6 +28,19 @@ const interceptors = Interceptor.of(headers_interceptor);
 
 // const client = Http.create({ adapter, interceptors, url: base_url });
 
+test("should make GET request without method", async () => {
+  // const interceptors = Interceptor.of(headers_interceptor);
+
+  const client = Http.create({ adapter, interceptors, url: base_url });
+
+  const res = await client("/users/2");
+  const json = await andThen(res, Response.json);
+
+  const result = json as Extract<typeof json, { _tag: "Right" }>;
+
+  expect(result.right.data.id).toBe(2);
+});
+
 test("should make client with http methods", async () => {
   // const interceptors = Interceptor.of(headers_interceptor);
 

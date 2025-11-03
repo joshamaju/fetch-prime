@@ -3,11 +3,10 @@
  */
 import type { Either } from "fp-ts/Either";
 
+import { Body } from "./Body.js";
 import { HttpError } from "./internal/error.js";
 import * as core from "./internal/fetch.js";
-import { HttpRequest } from "./internal/request.js";
 import { HttpResponseEither } from "./internal/response/index.js";
-import { Body } from "./Body.js";
 
 /**
  * @since 0.0.1
@@ -23,9 +22,7 @@ export type Init =
  * @category model
  */
 export interface Adapter {
-  (url: string | URL | HttpRequest, init?: RequestInit): Promise<
-    Either<HttpError, Response>
-  >;
+  (url: string | URL, init?: RequestInit): Promise<Either<HttpError, Response>>;
 }
 
 /**

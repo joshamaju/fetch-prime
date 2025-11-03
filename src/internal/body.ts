@@ -38,7 +38,7 @@ export function json(input: object): Json {
 }
 
 export function form(
-  input: FormData | Record<string, string | Array<unknown>>,
+  input: FormData | Record<string, string | Array<unknown>>
 ): Form {
   const formData = new FormData();
 
