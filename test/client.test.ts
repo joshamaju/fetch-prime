@@ -13,13 +13,14 @@ import Config from "../src/Interceptors/Config.js";
 import { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
 import * as Response from "../src/Response.js";
+import { API_KEY } from "./constants.js";
 
 const base_url = "https://reqres.in/api";
 
 const base_url_interceptor = BaseURL(base_url);
 
 const config = {
-  headers: { "x-api-key": "reqres-free-v1" },
+  headers: { "x-api-key": API_KEY },
 };
 
 const headers_interceptor = Config(config);

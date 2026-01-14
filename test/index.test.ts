@@ -13,11 +13,12 @@ import {
   HttpResponse,
   filterStatusOk,
 } from "../src/Response.js";
+import { API_KEY } from "./constants.js";
 
 const base_url = "https://reqres.in/api";
 
 const config = {
-  headers: { "x-api-key": "reqres-free-v1" },
+  headers: { "x-api-key": API_KEY },
 };
 
 const fetch = Http.fetch(Adapter);
