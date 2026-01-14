@@ -160,7 +160,7 @@ describe("timeout", () => {
       url: API_URL,
     });
 
-    const result = await client.get("/users/2?delay=10");
+    const result = await client.get("/users/2?delay=1000");
 
     expect(E.isLeft(result)).toBeTruthy();
     expect((result as E.Left<any>).left).instanceOf(HttpError);
