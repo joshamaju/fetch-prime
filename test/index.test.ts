@@ -13,9 +13,7 @@ import {
   HttpResponse,
   filterStatusOk,
 } from "../src/Response.js";
-import { API_KEY } from "./constants.js";
-
-const base_url = "https://reqres.in/api";
+import { API_KEY, API_URL } from "./constants.js";
 
 const config = {
   headers: { "x-api-key": API_KEY },
@@ -47,9 +45,9 @@ test("streaming", async () => {
 });
 
 test("should make request", async () => {
-  const res = await fetch_(base_url + "/users/2", config);
+  const res = await fetch_(API_URL + "/users/2", config);
   const result = await res.ok((_) => _.json());
-  expect((result as E.Right<any>).right.data.id).toBe(2);
+  expect((result as E.Right<any>).right.id).toBe(2);
 });
 
 test("should be able to abort request", async () => {
@@ -60,7 +58,7 @@ test("should be able to abort request", async () => {
     clearTimeout(timeout);
   }, 500);
 
-  const res = await fetch_(base_url + "/users/2?delay=10", {
+  const res = await fetch_(API_URL + "/users/2?delay=1000", {
     ...config,
     signal: controller.signal,
   });
@@ -75,24 +73,24 @@ test("should be able to abort request", async () => {
 });
 
 test("should partition response with status filter", async () => {
-  const request = await fetch(base_url + "/users/2", config);
+  const request = await fetch(API_URL + "/users/2", config);
   const ok = andThen(request, filterStatusOk);
   const result = await andThen(ok, json);
-  expect((result as E.Right<any>).right.data.id).toBe(2);
+  expect((result as E.Right<any>).right.id).toBe(2);
 });
 
 describe("decoders", () => {
   test("should decode json response", async () => {
-    const res = await fetch(base_url + "/users/2", config);
+    const res = await fetch(API_URL + "/users/2", config);
     const result = await andThen(res, json);
-    expect((result as E.Right<any>).right.data.id).toBe(2);
+    expect((result as E.Right<any>).right.id).toBe(2);
   });
 
   test("should decode text response", async () => {
     const early = async () => E.right(new Response("10"));
     const interceptor = Interceptor.make(Interceptor.of(early));
     const fetch = Http.fetch(interceptor(Adapter));
-    const res = await fetch(base_url + "/users/2", config);
+    const res = await fetch(API_URL + "/users/2", config);
     const result = await andThen(res, text);
     expect((result as E.Right<any>).right).toBe("10");
   });
@@ -106,7 +104,7 @@ describe("decoders", () => {
 
     const interceptor = Interceptor.make(Interceptor.of(early));
     const fetch = Http.fetch(interceptor(Adapter));
-    const res = await fetch(base_url + "/users/2", config);
+    const res = await fetch(API_URL + "/users/2", config);
     const result = await andThen(res, formData);
     const form = (result as Extract<typeof result, E.Right<any>>).right;
     expect(form).toBeInstanceOf(FormData);

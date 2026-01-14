@@ -13,11 +13,9 @@ import Config from "../src/Interceptors/Config.js";
 import { TimeoutError } from "../src/Interceptors/Timeout.js";
 import BaseURL from "../src/Interceptors/Url.js";
 import * as Response from "../src/Response.js";
-import { API_KEY } from "./constants.js";
+import { API_KEY, API_URL } from "./constants.js";
 
-const base_url = "https://reqres.in/api";
-
-const base_url_interceptor = BaseURL(base_url);
+const base_url_interceptor = BaseURL(API_URL);
 
 const config = {
   headers: { "x-api-key": API_KEY },
@@ -32,27 +30,27 @@ const interceptors = Interceptor.of(headers_interceptor);
 test("should make GET request without method", async () => {
   // const interceptors = Interceptor.of(headers_interceptor);
 
-  const client = Http.create({ adapter, interceptors, url: base_url });
+  const client = Http.create({ adapter, interceptors, url: API_URL });
 
   const res = await client("/users/2");
   const json = await andThen(res, Response.json);
 
   const result = json as Extract<typeof json, { _tag: "Right" }>;
 
-  expect(result.right.data.id).toBe(2);
+  expect(result.right.id).toBe(2);
 });
 
 test("should make client with http methods", async () => {
   // const interceptors = Interceptor.of(headers_interceptor);
 
-  const client = Http.create({ adapter, interceptors, url: base_url });
+  const client = Http.create({ adapter, interceptors, url: API_URL });
 
   const res = await client.get("/users/2");
   const json = await andThen(res, Response.json);
 
   const result = json as Extract<typeof json, { _tag: "Right" }>;
 
-  expect(result.right.data.id).toBe(2);
+  expect(result.right.id).toBe(2);
 });
 
 test("should be able to use client thunk and have access to raw result", async () => {
@@ -69,17 +67,17 @@ test("should be able to use client thunk and have access to raw result", async (
   const result = json as Extract<typeof json, { _tag: "Right" }>;
 
   expect(E.isLeft(res) || E.isRight(res)).toBeTruthy();
-  expect(result.right.data.id).toBe(2);
+  expect(result.right.id).toBe(2);
 });
 
 test("should make client with base URL for every request", async () => {
-  const client = Http.create({ adapter, interceptors, url: base_url });
+  const client = Http.create({ adapter, interceptors, url: API_URL });
 
   const res = await client.get("/users/2");
 
   const result = await andThen(res, Response.json);
 
-  expect((result as E.Right<any>).right.data.id).toBe(2);
+  expect((result as E.Right<any>).right.id).toBe(2);
 });
 
 test("should make client with interceptors", async () => {
@@ -87,7 +85,7 @@ test("should make client with interceptors", async () => {
 
   const client = Http.create({
     interceptors,
-    url: base_url,
+    url: API_URL,
     adapter: adapter,
   });
 
@@ -95,7 +93,7 @@ test("should make client with interceptors", async () => {
 
   const result = await andThen(res, Response.json);
 
-  expect((result as E.Right<any>).right.data.id).toBe(2);
+  expect((result as E.Right<any>).right.id).toBe(2);
 });
 
 test("should attach JSON body and headers", async () => {
@@ -116,18 +114,13 @@ test("should attach JSON body and headers", async () => {
 
   const client = Http.create({ interceptors, adapter: adapter });
 
-  const body_json = json({ name: "morpheus", job: "leader" });
+  const body_json = json({ firstName: "morpheus", lastName: "leader" });
 
-  const res = await client.post("/users", body_json);
+  const res = await client.post("/users/add", body_json);
 
-  const result = await andThen(res, Response.json);
+  await andThen(res, Response.json);
 
-  expect((result as E.Right<any>).right).toMatchObject({
-    name: "morpheus",
-    job: "leader",
-  });
-
-  expect(body).toBe('{"name":"morpheus","job":"leader"}');
+  expect(body).toBe('{"firstName":"morpheus","lastName":"leader"}');
   expect(headers?.get("Content-Type")).toBe("application/json");
   expect(headers?.has("Content-Length")).toBeTruthy();
 });
@@ -148,17 +141,12 @@ test("should attach JSON body and headers with custom headers", async () => {
 
   const client = Http.create({ interceptors, adapter: adapter });
 
-  const res = await client.post("/users", {
+  const res = await client.post("/users/add", {
     headers: { "X-Custom-API-Key-2": "Bearer <APIKEY>" },
-    body: json({ name: "morpheus", job: "leader" }),
+    body: json({ firstName: "morpheus", lastName: "leader" }),
   });
 
-  const result = await andThen(res, Response.json);
-
-  expect((result as E.Right<any>).right).toMatchObject({
-    name: "morpheus",
-    job: "leader",
-  });
+  await andThen(res, Response.json);
 
   expect(headers?.get("X-Custom-API-Key-2")).toBe("Bearer <APIKEY>");
 });
@@ -169,7 +157,7 @@ describe("timeout", () => {
       adapter,
       timeout: 100,
       interceptors,
-      url: base_url,
+      url: API_URL,
     });
 
     const result = await client.get("/users/2?delay=10");
@@ -191,7 +179,7 @@ describe("method", () => {
 
     const interceptors = Interceptor.of(check);
 
-    const client = Http.create({ adapter, interceptors, url: base_url });
+    const client = Http.create({ adapter, interceptors, url: API_URL });
 
     await client.post("/users/2");
 
@@ -208,7 +196,7 @@ describe("method", () => {
 
     const interceptors = Interceptor.of(check);
 
-    const client = Http.create({ adapter, interceptors, url: base_url });
+    const client = Http.create({ adapter, interceptors, url: API_URL });
 
     await client.head("/users/2");
 

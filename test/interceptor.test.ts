@@ -19,11 +19,9 @@ import URLSearchParams, {
   Config as URLSearchParamsConfig,
 } from "../src/Interceptors/URLSearchParams.js";
 import Config from "../src/Interceptors/Config.js";
-import { API_KEY } from "./constants.js";
+import { API_KEY, API_URL } from "./constants.js";
 
-const base_url = "https://reqres.in/api";
-
-const base_url_interceptor = BaseURL(base_url);
+const base_url_interceptor = BaseURL(API_URL);
 
 const headers_interceptor = Config({
   headers: { "x-api-key": API_KEY },
@@ -71,7 +69,7 @@ test("should call interceptors in provided order", async () => {
 
   const fetch = fetch_(interceptor);
 
-  await fetch(base_url + "/users/2");
+  await fetch(API_URL + "/users/2");
 
   expect(order).toStrictEqual([1, 2, 3, 3, 2, 1]);
 
@@ -86,7 +84,7 @@ test("should call interceptors in provided order", async () => {
 
   const interceptor_desc = Interceptor.make(interceptors_desc)(adapter);
 
-  await fetch_(interceptor_desc)(base_url + "/users/2");
+  await fetch_(interceptor_desc)(API_URL + "/users/2");
 
   expect(order).toStrictEqual([3, 2, 1, 1, 2, 3]);
 });
@@ -120,7 +118,7 @@ test("every interceptor should receive the result of the next interceptor", asyn
 
   const interceptor = Interceptor.make(interceptors)(adapter);
 
-  const res = await Http.fetch_(interceptor)(base_url + "/users/2");
+  const res = await Http.fetch_(interceptor)(API_URL + "/users/2");
 
   const result = await res.ok((_) => _.text());
 
@@ -146,7 +144,7 @@ test("should return early without calling the next interceptor", async () => {
 
   const interceptor = Interceptor.make(interceptors)(adapter);
 
-  const res = await Http.fetch_(interceptor)(base_url + "/users/2");
+  const res = await Http.fetch_(interceptor)(API_URL + "/users/2");
   const result = await andThen(res.response, (_) => _.text());
 
   expect((result as E.Right<any>).right).toBe("10");
@@ -164,7 +162,8 @@ test("should create handler with single interceptor", async () => {
   const res = await Http.fetch_(interceptor)("/users/2");
   const result = await res.ok((_) => _.json());
 
-  expect((result as E.Right<any>).right.data.id).toBe(2);
+  expect(E.isRight(result)).toBeTruthy();
+  expect((result as E.Right<any>).right.id).toBe(2);
 });
 
 test("should create handler with early error interceptor", async () => {
@@ -245,7 +244,7 @@ test("should attach url to every outgoing request", async () => {
 
   const res = await Http.fetch_(adapter_)("/users/2");
 
-  expect(url).toBe(base_url + "/users/2");
+  expect(url).toBe(API_URL + "/users/2");
   // expect((res as Extract<typeof res, { _tag: "Right" }>).right.url).toBe(
   //   "https://reqres.in/api/users/2",
   // );
@@ -281,26 +280,6 @@ test("should attach url to every outgoing request", async () => {
 //   expect((result as E.Right<any>).right.data.id).toBe(2);
 // });
 
-test("request timeout interceptor", async () => {
-  const interceptors = pipe(
-    Interceptor.of(base_url_interceptor),
-    Interceptor.add(Timeout(500))
-  );
-
-  const adapter_ = Interceptor.make(interceptors)(adapter);
-
-  const result = await Http.fetch_(adapter_)("/users/2?delay=10");
-  const res = result.response;
-
-  const err = (res as Extract<typeof res, { _tag: "Left" }>).left;
-
-  expect(E.isLeft(res)).toBeTruthy();
-  expect(err).instanceOf(HttpError);
-  expect((err as Extract<typeof err, HttpError>).cause).instanceOf(
-    TimeoutError
-  );
-});
-
 describe("error handling", () => {
   test("should receive returned error by interceptor in the chain", async () => {
     let result: E.Either<any, any> | undefined;
@@ -321,7 +300,7 @@ describe("error handling", () => {
 
     const interceptor = Interceptor.make(interceptors)(adapter);
 
-    await Http.fetch(interceptor)(base_url + "/users/2");
+    await Http.fetch(interceptor)(API_URL + "/users/2");
 
     expect(E.isLeft(result!)).toBeTruthy();
     expect((result as any as E.Left<string>).left).toBe("error");
@@ -348,7 +327,7 @@ describe("error handling", () => {
 
     const interceptor = Interceptor.make(interceptors)(adapter);
 
-    await Http.fetch(interceptor)(base_url + "/users/2");
+    await Http.fetch(interceptor)(API_URL + "/users/2");
 
     const err = _res!.left as InterceptorError;
 
@@ -362,6 +341,26 @@ describe("error handling", () => {
 });
 
 describe("Interceptors", () => {
+  test("request timeout interceptor", async () => {
+    const interceptors = pipe(
+      Interceptor.of(base_url_interceptor),
+      Interceptor.add(Timeout(500))
+    );
+
+    const adapter_ = Interceptor.make(interceptors)(adapter);
+
+    const result = await Http.fetch_(adapter_)("/products/2?delay=1000");
+    const res = result.response;
+
+    const err = (res as Extract<typeof res, { _tag: "Left" }>).left;
+
+    expect(E.isLeft(res)).toBeTruthy();
+    expect(err).instanceOf(HttpError);
+    expect((err as Extract<typeof err, HttpError>).cause).instanceOf(
+      TimeoutError
+    );
+  });
+
   describe("Status Filter", () => {
     const interceptors = pipe(
       Interceptor.empty(),
@@ -376,17 +375,17 @@ describe("Interceptors", () => {
       const res = await Http.fetch_(newAdapter)("/users/2");
       const result = await res.json();
 
-      expect(result._tag).toBe("Right");
-      expect((result as E.Right<any>).right.data.id).toBe(2);
+      expect(E.isRight(result)).toBeTruthy();
+      expect((result as E.Right<any>).right.id).toBe(2);
     });
 
     test("should partition to error response", async () => {
       const newAdapter = Interceptor.make(interceptors)(adapter);
 
-      const res = await Http.fetch_(newAdapter)("/users/23");
+      const res = await Http.fetch_(newAdapter)("/users/unknown");
       const result = await res.json();
 
-      expect(result._tag).toBe("Left");
+      expect(E.isLeft(result)).toBeTruthy();
       expect((result as E.Left<any>).left).toBeInstanceOf(StatusError);
     });
   });
@@ -413,13 +412,13 @@ describe("Interceptors", () => {
       )(adapter);
 
       const res = await Http.fetch_(newAdapter)("/users", {
-        params: { page: 2 },
+        params: { limit: 2 },
       });
 
       const result = await res.json();
 
-      expect(url!).toBe("https://reqres.in/api/users?page=2");
-      expect((result as E.Right<any>).right.page).toBe(2);
+      expect(url!).toBe(API_URL + "/users?limit=2");
+      expect((result as E.Right<any>).right.limit).toBe(2);
     });
   });
 });
