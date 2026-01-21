@@ -87,5 +87,8 @@
   },
   "dependencies": {
     "effection": "^3.0.3"
+  },
+  "optionalDependencies": {
+    "axios": "^1.13.1"
   }
 }
